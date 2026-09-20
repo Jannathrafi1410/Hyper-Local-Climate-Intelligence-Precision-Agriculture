@@ -1,0 +1,1631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hyper-Local Climate Intelligence &amp; Precision Agriculture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --navy:#0B1E3D; --navy-2:#12294F; --navy-3:#1B3A6B;
+  --emerald:#0E9F6B; --emerald-dk:#0B7F55;
+  --amber:#C67C06; --amber-bg:#FFF4DE;
+  --red:#D6362C; --red-bg:#FDEBEA;
+  --blue:#2563A8; --blue-bg:#E9F2FB;
+  --green-bg:#E7F7EF;
+  --bg:#F4F6F9; --surface:#FFFFFF; --border:#E2E6ED; --border-2:#EDF0F4;
+  --text:#0F1B2D; --muted:#5A6577; --faint:#8A93A3;
+  --radius:14px; --radius-sm:9px;
+  --shadow:0 1px 2px rgba(16,24,40,.04), 0 1px 8px rgba(16,24,40,.05);
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+:root:not([data-theme="light"]) { }
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0A1220; --surface:#111B2D; --border:#233049; --border-2:#1C2740;
+    --text:#E8ECF3; --muted:#94A0B8; --faint:#5F6B82;
+    --green-bg:#0E2A22; --amber-bg:#2E2410; --red-bg:#301516; --blue-bg:#0F2337;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0A1220; --surface:#111B2D; --border:#233049; --border-2:#1C2740;
+  --text:#E8ECF3; --muted:#94A0B8; --faint:#5F6B82;
+  --green-bg:#0E2A22; --amber-bg:#2E2410; --red-bg:#301516; --blue-bg:#0F2337;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+html{scroll-padding-top:env(safe-area-inset-top,0px);}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:'Inter',system-ui,-apple-system,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,.display{font-family:'Space Grotesk',Inter,sans-serif;}
+::-webkit-scrollbar{width:8px;height:8px;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px;}
+a{color:inherit;text-decoration:none;}
+button{font-family:inherit;cursor:pointer;}
+:focus-visible{outline:2px solid var(--emerald); outline-offset:2px;}
+.mono-num{font-variant-numeric:tabular-nums;}
+
+/* Layout shell */
+#shell{display:flex; min-height:100%;}
+#sidebar{
+  width:250px; flex-shrink:0; background:var(--navy); color:#DCE4F2;
+  display:flex; flex-direction:column; position:fixed; top:0; bottom:0; left:0;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  z-index:40; transition:transform .25s ease;
+}
+#main-col{flex:1; margin-left:250px; min-width:0; display:flex; flex-direction:column;}
+.sb-brand{display:flex; align-items:center; gap:10px; padding:20px 18px 16px; border-bottom:1px solid rgba(255,255,255,.08);}
+.sb-brand-mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--emerald),#0B7F55);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.sb-brand-text{font-family:'Space Grotesk';font-weight:600;font-size:14.5px;line-height:1.25;color:#fff;}
+.sb-brand-sub{font-size:10.5px;color:#8FA2C4;letter-spacing:.01em;}
+.sb-nav{flex:1; overflow-y:auto; padding:14px 10px;}
+.sb-section-label{font-size:10.5px; color:#6E82AA; padding:14px 10px 6px; font-weight:600; letter-spacing:.03em;}
+.sb-item{
+  display:flex; align-items:center; gap:11px; padding:9px 11px; border-radius:9px;
+  color:#B7C3DC; font-size:13.4px; font-weight:500; margin-bottom:1px; position:relative;
+}
+.sb-item svg{flex-shrink:0; opacity:.85;}
+.sb-item:hover{background:rgba(255,255,255,.06); color:#fff;}
+.sb-item.active{background:rgba(14,159,107,.16); color:#fff;}
+.sb-item.active svg{opacity:1; color:var(--emerald);}
+.sb-item.active::before{content:'';position:absolute;left:-10px;top:8px;bottom:8px;width:3px;border-radius:3px;background:var(--emerald);}
+.sb-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10.5px;font-weight:700;border-radius:999px;padding:1px 6px;}
+.sb-foot{padding:14px 18px 18px;border-top:1px solid rgba(255,255,255,.08);}
+.sync-pill{display:flex;align-items:center;gap:7px;font-size:11.5px;color:#8FA2C4;}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--emerald);box-shadow:0 0 0 3px rgba(14,159,107,.2);}
+
+/* Topbar */
+#topbar{
+  position:sticky; top:0; z-index:30; background:var(--surface); border-bottom:1px solid var(--border);
+  padding:12px 22px; display:flex; align-items:center; gap:14px; padding-top:calc(12px + env(safe-area-inset-top,0px));
+}
+.hamburger{display:none;}
+#topbar .tb-title{font-family:'Space Grotesk';font-weight:600;font-size:17px;}
+.farmpick{margin-left:auto; display:flex; align-items:center; gap:10px;}
+.select-wrap{position:relative;}
+select.pill-select{
+  appearance:none; background:var(--bg); border:1px solid var(--border); border-radius:9px;
+  padding:8px 30px 8px 12px; font-size:13px; font-weight:600; color:var(--text); cursor:pointer;
+}
+.select-wrap::after{content:'';position:absolute;right:11px;top:50%;width:7px;height:7px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:translateY(-65%) rotate(45deg);pointer-events:none;}
+.iconbtn{width:36px;height:36px;border-radius:9px;border:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--muted);position:relative;}
+.iconbtn:hover{background:var(--bg);}
+
+#view{padding:22px; max-width:1400px; width:100%; margin:0 auto;}
+@media(max-width:1000px){#view{padding:16px;}}
+
+/* generic */
+.grid{display:grid; gap:14px;}
+.card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow);}
+.card-pad{padding:18px;}
+.section-title{font-family:'Space Grotesk'; font-weight:600; font-size:15.5px; margin:0 0 2px;}
+.section-sub{color:var(--muted); font-size:12.5px; margin:0 0 14px;}
+.eyebrow{font-size:11px;color:var(--faint);font-weight:600;}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:700;}
+.badge.green{background:var(--green-bg);color:var(--emerald-dk);}
+.badge.amber{background:var(--amber-bg);color:var(--amber);}
+.badge.red{background:var(--red-bg);color:var(--red);}
+.badge.blue{background:var(--blue-bg);color:var(--blue);}
+.badge.gray{background:var(--bg);color:var(--muted);border:1px solid var(--border);}
+.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.dot.green{background:var(--emerald);} .dot.amber{background:var(--amber);} .dot.red{background:var(--red);} .dot.blue{background:var(--blue);}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border-radius:9px;padding:9px 15px;font-weight:600;font-size:13px;border:1px solid transparent;transition:transform .08s ease;}
+.btn:active{transform:scale(.97);}
+.btn-primary{background:var(--navy);color:#fff;}
+.btn-primary:hover{background:var(--navy-3);}
+.btn-emerald{background:var(--emerald);color:#fff;}
+.btn-emerald:hover{background:var(--emerald-dk);}
+.btn-outline{background:var(--surface);border-color:var(--border);color:var(--text);}
+.btn-outline:hover{background:var(--bg);}
+.btn-sm{padding:6px 11px;font-size:12px;border-radius:8px;}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+hr.rule{border:none;border-top:1px solid var(--border-2);margin:14px 0;}
+.skel{background:linear-gradient(90deg,var(--border-2) 25%,var(--border) 37%,var(--border-2) 63%);background-size:400% 100%;animation:sk 1.3s ease infinite;border-radius:8px;}
+@keyframes sk{0%{background-position:100% 0}100%{background-position:0 0}}
+.demo-tag{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;color:var(--blue);background:var(--blue-bg);padding:2px 8px;border-radius:6px;letter-spacing:.02em;}
+.fade-in{animation:fadeIn .3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+.hoverlift{transition:box-shadow .15s ease, transform .15s ease;}
+.hoverlift:hover{box-shadow:0 4px 18px rgba(16,24,40,.09); transform:translateY(-1px);}
+
+/* KPI card */
+.kpi{padding:16px;}
+.kpi-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.kpi-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;}
+.kpi-val{font-family:'Space Grotesk';font-size:26px;font-weight:600;line-height:1;}
+.kpi-label{color:var(--muted);font-size:12px;margin-top:6px;}
+.kpi-bar{height:4px;border-radius:3px;background:var(--border-2);margin-top:10px;overflow:hidden;}
+.kpi-bar > div{height:100%;border-radius:3px;}
+
+/* pipeline */
+.pipeline{display:flex;align-items:stretch;gap:0;overflow-x:auto;padding:4px 2px 10px;}
+.pipe-step{flex:1;min-width:118px;display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;padding:0 6px;}
+.pipe-circle{width:42px;height:42px;border-radius:50%;background:var(--surface);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;margin-bottom:8px;color:var(--navy-3);position:relative;z-index:2;}
+:root[data-theme="dark"] .pipe-circle{color:#8FB4E8;}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .pipe-circle{color:#8FB4E8;}}
+.pipe-line{position:absolute;top:21px;left:-50%;width:100%;height:2px;background:var(--border);z-index:1;}
+.pipe-step:first-child .pipe-line{display:none;}
+.pipe-title{font-size:11.5px;font-weight:700;}
+.pipe-sub{font-size:10.5px;color:var(--faint);margin-top:2px;}
+.pipe-flow{position:absolute;top:21px;left:-50%;width:0%;height:2px;background:var(--emerald);z-index:1;transition:width 1.1s ease;}
+
+/* map / zones */
+.field-stage{
+  position:relative; border-radius:var(--radius); overflow:hidden; border:1px solid var(--border);
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255,255,255,.05), transparent 40%),
+    linear-gradient(135deg,#3B5D42,#26402C 60%,#1E3423);
+  padding:20px; min-height:380px;
+}
+.zone-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; height:100%;}
+.zone-cell{
+  border-radius:10px; padding:10px; display:flex; flex-direction:column; justify-content:space-between;
+  border:1.5px solid rgba(255,255,255,.18); cursor:pointer; min-height:105px; position:relative;
+  transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+  background-blend-mode:multiply;
+}
+.zone-cell:hover{transform:translateY(-2px) scale(1.015); box-shadow:0 8px 20px rgba(0,0,0,.28); z-index:2;}
+.zone-cell.selected{border-color:#fff; box-shadow:0 0 0 2px #fff, 0 8px 20px rgba(0,0,0,.3);}
+.zone-cell.healthy{background-color:#2E8B57;}
+.zone-cell.moderate{background-color:#C6820A;}
+.zone-cell.critical{background-color:#B23A30;}
+.zc-top{display:flex;justify-content:space-between;align-items:flex-start;}
+.zc-label{color:#fff;font-weight:700;font-size:15px;font-family:'Space Grotesk';}
+.zc-pulse{width:9px;height:9px;border-radius:50%;background:#fff;}
+.zone-cell.critical .zc-pulse{animation:pulse 1.6s ease infinite;}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,255,255,.55);}70%{box-shadow:0 0 0 9px rgba(255,255,255,0);}100%{box-shadow:0 0 0 0 rgba(255,255,255,0);}}
+.zc-bottom{color:#fff;}
+.zc-status{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;opacity:.95;}
+.zc-metric{font-size:18px;font-weight:700;font-family:'Space Grotesk';line-height:1.1;}
+.legend-row{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-top:12px;font-size:12px;color:var(--muted);}
+.legend-item{display:flex;align-items:center;gap:6px;}
+
+.layer-switch{display:flex;flex-wrap:wrap;gap:7px;}
+.layer-chip{border:1px solid var(--border); background:var(--surface); padding:6px 11px; border-radius:999px; font-size:12px; font-weight:600; color:var(--muted); display:flex; align-items:center; gap:6px;}
+.layer-chip.active{background:var(--navy); color:#fff; border-color:var(--navy);}
+
+/* side panel */
+.panel-overlay{position:fixed;inset:0;background:rgba(11,18,32,.4);z-index:49;opacity:0;pointer-events:none;transition:opacity .2s ease;}
+.panel-overlay.open{opacity:1;pointer-events:auto;}
+#zonepanel{
+  position:fixed; top:0; right:0; bottom:0; width:420px; max-width:92vw; background:var(--surface);
+  border-left:1px solid var(--border); z-index:50; transform:translateX(100%); transition:transform .25s ease;
+  display:flex; flex-direction:column; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+#zonepanel.open{transform:translateX(0);}
+.panel-head{padding:18px 18px 0;}
+.panel-tabs{display:flex; gap:4px; padding:14px 18px 0; border-bottom:1px solid var(--border);}
+.ptab{padding:9px 4px;margin-right:14px;font-size:12.5px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;}
+.ptab.active{color:var(--navy-3);border-color:var(--emerald);}
+:root[data-theme="dark"] .ptab.active{color:#fff;}
+.panel-body{flex:1; overflow-y:auto; padding:16px 18px 24px;}
+.mrow{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border-2);font-size:13px;}
+.mrow:last-child{border-bottom:none;}
+.mrow .mv{font-weight:700;font-family:'Space Grotesk';}
+
+.reason-row{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border-2);}
+.reason-row:last-child{border-bottom:none;}
+.reason-bar-track{background:var(--border-2);border-radius:5px;height:6px;margin-top:6px;overflow:hidden;}
+.reason-bar-fill{height:100%;border-radius:5px;background:var(--navy-3);}
+
+.rec-card{border:1px solid var(--border); border-radius:var(--radius-sm); padding:13px; margin-bottom:10px;}
+.rec-card .rc-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px;}
+
+/* toasts */
+#toasts{position:fixed;bottom:18px;right:18px;z-index:80;display:flex;flex-direction:column;gap:8px;max-width:340px;}
+@media(max-width:640px){#toasts{right:10px;left:10px;bottom:calc(72px + env(safe-area-inset-bottom,0px));max-width:none;}}
+.toast{background:var(--navy); color:#fff; padding:12px 14px; border-radius:10px; font-size:12.8px; box-shadow:0 8px 24px rgba(0,0,0,.25); display:flex; gap:10px; align-items:flex-start; animation:toastIn .25s ease;}
+@keyframes toastIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.toast b{display:block;margin-bottom:2px;}
+
+/* tables */
+table.dtab{width:100%; border-collapse:collapse; font-size:12.8px;}
+table.dtab th{text-align:left; color:var(--muted); font-weight:600; padding:8px 10px; border-bottom:1px solid var(--border); font-size:11.5px; text-transform:uppercase; letter-spacing:.02em;}
+table.dtab td{padding:10px; border-bottom:1px solid var(--border-2); vertical-align:middle;}
+table.dtab tr:last-child td{border-bottom:none;}
+table.dtab tr:hover td{background:var(--bg);}
+
+/* landing */
+.landing-hero{padding:56px 8px 20px; text-align:center; max-width:760px; margin:0 auto;}
+.landing-hero h1{font-size:clamp(28px,4.6vw,44px); font-weight:700; line-height:1.12; margin:0 0 14px;}
+.landing-hero p.sub{color:var(--muted); font-size:16px; max-width:560px; margin:0 auto 26px;}
+.hero-cta{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-bottom:38px;}
+.problem-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin:34px 0;}
+@media(max-width:900px){.problem-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:560px){.problem-grid{grid-template-columns:1fr;}}
+.pcard{padding:17px;}
+.pcard .pnum{font-family:'Space Grotesk';font-weight:700;color:var(--emerald);font-size:12px;margin-bottom:9px;}
+
+.tabbar{display:none;}
+@media(max-width:880px){
+  #sidebar{transform:translateX(-100%);}
+  #sidebar.open{transform:translateX(0);}
+  #main-col{margin-left:0;}
+  .hamburger{display:flex;}
+  .tabbar{
+    display:flex; position:fixed; left:0; right:0; bottom:0; z-index:35; background:var(--surface);
+    border-top:1px solid var(--border); padding:6px 2px calc(6px + env(safe-area-inset-bottom,0px));
+  }
+  .tb-item{flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:6px 2px; color:var(--muted); font-size:10px; font-weight:600; border-radius:8px;}
+  .tb-item.active{color:var(--emerald);}
+  #main-col{padding-bottom:58px;}
+  .problem-grid{margin:22px 0;}
+}
+@media(min-width:881px){.sidebar-scrim{display:none !important;}}
+.sidebar-scrim{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:39;}
+
+.metric-mini{display:flex; align-items:center; gap:10px;}
+.metric-mini .mm-ic{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+
+.offline-strip{background:var(--amber-bg); color:var(--amber); font-size:12px; font-weight:600; padding:8px 14px; display:flex; align-items:center; gap:8px; border-bottom:1px solid var(--border);}
+
+.progress-ring{transform:rotate(-90deg);}
+.two-col{display:grid; grid-template-columns:1.5fr 1fr; gap:14px;}
+@media(max-width:980px){.two-col{grid-template-columns:1fr;}}
+.chart-wrap{position:relative; height:220px;}
+.chart-wrap.short{height:150px;}
+
+input[type=range]{width:100%; accent-color:var(--emerald);}
+.toggle{position:relative; width:40px; height:22px; border-radius:999px; background:var(--border); flex-shrink:0; transition:background .15s;}
+.toggle.on{background:var(--emerald);}
+.toggle .knob{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .15s;box-shadow:0 1px 3px rgba(0,0,0,.3);}
+.toggle.on .knob{left:20px;}
+.field-select-row{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;}
+.chip-btn{padding:7px 13px;border-radius:999px;border:1px solid var(--border);background:var(--surface);font-size:12.5px;font-weight:600;color:var(--muted);}
+.chip-btn.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+label.setting-lbl{font-size:12.5px;font-weight:600;color:var(--muted);display:block;margin-bottom:6px;}
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+<div id="toasts"></div>
+
+<script>
+/* ============================= ICONS ============================= */
+const ICONS = {
+  logo:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v6M12 16v6M4.9 4.9l4.2 4.2M14.9 14.9l4.2 4.2M2 12h6M16 12h6M4.9 19.1l4.2-4.2M14.9 9.1l4.2-4.2"/></svg>',
+  dashboard:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>',
+  field:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/><path d="M7 3v18M17 3v18"/></svg>',
+  map:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3 3 6v15l6-3 6 3 6-3V3l-6 3-6-3Z"/><path d="M9 3v15M15 6v15"/></svg>',
+  weather:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H8a4.5 4.5 0 1 1 .6-8.96A6 6 0 1 1 17.5 19Z"/></svg>',
+  soil:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6"/><path d="M9 5h6"/><path d="M4 14c0-2 2-3 4-3s3 1.5 4 1.5S14 11 16 11s4 1 4 3"/><path d="M3 19h18M3 22h18"/></svg>',
+  leaf:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 4 13c0-4 3-9 9-11 2 4 3 7 3 9a7 7 0 0 1-5 9Z"/><path d="M8 16c4-3 6-6 7-11"/></svg>',
+  bug:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="7" width="8" height="12" rx="4"/><path d="M12 7V3M8 9 4 7M16 9l4-2M8 15l-4 1M16 15l4 1M9 3h6"/></svg>',
+  drop:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2s7 8 7 13a7 7 0 1 1-14 0c0-5 7-13 7-13Z"/></svg>',
+  yield:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 16l4-5 3 3 5-7"/></svg>',
+  brain:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4a3 3 0 0 0-3 3v1a3 3 0 0 0-2 5 3 3 0 0 0 2 5.5A3 3 0 0 0 9 21"/><path d="M15 4a3 3 0 0 1 3 3v1a3 3 0 0 1 2 5 3 3 0 0 1-2 5.5 3 3 0 0 1-3 2.5"/><path d="M9 4v17M15 4v17"/></svg>',
+  target:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>',
+  bell:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6Z"/><path d="M9.5 20a2.5 2.5 0 0 0 5 0"/></svg>',
+  db:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>',
+  layers:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="m2 17 10 5 10-5M2 12l10 5 10-5"/></svg>',
+  settings:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 1 1-4 0v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 1 1 0-4h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.6V3a2 2 0 1 1 4 0v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.6 1H21a2 2 0 1 1 0 4h-.2a1.7 1.7 0 0 0-1.6 1Z"/></svg>',
+  menu:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>',
+  x:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+  chevron:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>',
+  wind:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8h13a3 3 0 1 0-2.6-4.5M2 16h17a3 3 0 1 1-2.6 4.5M2 12h9"/></svg>',
+  gauge:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 14 15 9"/><circle cx="12" cy="14" r="1"/><path d="M4 14a8 8 0 1 1 16 0"/></svg>',
+  cloud:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H8a4.5 4.5 0 1 1 .6-8.96A6 6 0 1 1 17.5 19Z"/></svg>',
+  sat:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m13 7 4 4-6 6-4-4 6-6Z"/><path d="m17 3 4 4M2 22l4.5-4.5M7 12 4 9m11 11-3-3"/></svg>',
+  radar:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12V2a10 10 0 0 1 10 10h-10Z"/><circle cx="12" cy="12" r="9"/><path d="M12 12 5 19"/></svg>',
+  chip:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></svg>',
+  check:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+  alert:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>',
+  send:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-11 11M22 2 15 22l-4-9-9-4 20-7Z"/></svg>',
+  info:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 16v-5M12 8h.01"/></svg>',
+  play:'<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7Z"/></svg>',
+  wifi_off:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 1l22 22M16.7 16.7a10 10 0 0 0-9.4 0M5 12.5a15 15 0 0 1 3-2.2M19 12.5a15 15 0 0 0-1.8-1.6M8.5 16a5 5 0 0 1 4-1.5M12 20h.01"/></svg>',
+  phone:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/></svg>',
+};
+function ic(name,cls){return `<span class="${cls||''}" style="display:inline-flex">${ICONS[name]||''}</span>`;}
+
+/* ============================= DETERMINISTIC RNG ============================= */
+function rngFrom(seedStr){
+  let h = 2166136261 >>> 0;
+  for (let i=0;i<seedStr.length;i++){ h ^= seedStr.charCodeAt(i); h = Math.imul(h,16777619); }
+  return function(){
+    h ^= h << 13; h ^= h >>> 17; h ^= h << 5; h |= 0;
+    return ((h >>> 0) % 100000) / 100000;
+  };
+}
+function round1(n){return Math.round(n*10)/10;}
+function round2(n){return Math.round(n*100)/100;}
+
+/* ============================= DATA MODEL ============================= */
+const ZONE_LETTERS = ['A','B','C','D','E','F'];
+
+function statusFor(z){
+  const m = Math.max(z.diseaseRisk, z.droughtRisk, z.floodRisk);
+  if (m >= 60) return 'critical';
+  if (m >= 30) return 'moderate';
+  return 'healthy';
+}
+const STATUS_LABEL = {healthy:'Healthy', moderate:'Moderate Stress', critical:'Critical Risk'};
+
+function genZone(seed, idx, crop){
+  const r = rngFrom(seed+'-'+idx);
+  const ndvi = round2(0.32 + r()*0.52);
+  const soilMoisture = Math.round(14 + r()*48);
+  const temperature = round1(23 + r()*11);
+  const humidity = Math.round(48 + r()*40);
+  const rainfall = Math.round(r()*45);
+  const diseaseRisk = Math.round(r()*r()*95);
+  const droughtRisk = Math.round(r()*70);
+  const floodRisk = Math.round(r()*r()*55);
+  const yieldEstimate = round1(2.6 + r()*2.9);
+  const confidence = Math.round(76 + r()*20);
+  return {
+    id: seed+'-z'+idx, label: ZONE_LETTERS[idx], crop, ndvi, soilMoisture, temperature, humidity, rainfall,
+    diseaseRisk, droughtRisk, floodRisk, yieldEstimate, confidence,
+  };
+}
+function reasonsFor(z){
+  const reasons = [];
+  if (z.humidity >= 75) reasons.push({t:`Sustained high humidity (${z.humidity}%) over the last 48 hours`, w: Math.min(95, z.humidity+8)});
+  if (z.temperature >= 29) reasons.push({t:`Above-average canopy temperature (${z.temperature}°C) accelerating pathogen activity`, w: Math.min(90, Math.round((z.temperature-20)*6))});
+  if (z.ndvi < 0.65) reasons.push({t:`NDVI shows localized vegetation stress (${z.ndvi}, below field average)`, w: Math.round((0.75-z.ndvi)*160)});
+  if (z.soilMoisture < 30) reasons.push({t:`Soil moisture at ${z.soilMoisture}% — water deficit compounding plant stress`, w: Math.round((35-z.soilMoisture)*2.6)});
+  if (z.soilMoisture > 55) reasons.push({t:`Soil moisture at ${z.soilMoisture}% — saturation raising root-disease exposure`, w: Math.round((z.soilMoisture-45)*2)});
+  if (z.rainfall > 25) reasons.push({t:`Recent rainfall of ${z.rainfall}mm increasing surface wetness`, w: Math.round(z.rainfall*1.6)});
+  if (z.droughtRisk >= 40) reasons.push({t:`14-day rainfall deficit trending below seasonal norms`, w: z.droughtRisk});
+  if (z.floodRisk >= 35) reasons.push({t:`Low-lying zone topography with limited drainage capacity`, w: z.floodRisk+10});
+  if (reasons.length === 0) reasons.push({t:'Conditions within normal range across all monitored indicators', w: 20});
+  reasons.sort((a,b)=>b.w-a.w);
+  return reasons.slice(0,4).map(x=>({...x, w:Math.min(96,x.w)}));
+}
+function recommendationFor(z, fieldName){
+  const st = statusFor(z);
+  if (st === 'critical' && z.diseaseRisk >= Math.max(z.droughtRisk,z.floodRisk)){
+    return {priority:'critical', title:`Inspect Zone ${z.label} within 24 hours`,
+      body:`Disease risk has crossed the alert threshold in Zone ${z.label}. Field agronomy inspection is recommended before any treatment is applied.`,
+      actions:['Schedule in-field inspection within 24 hours','Hold off on fertilizer application until inspection confirms cause','Monitor humidity and temperature trend over next 48 hours']};
+  }
+  if (st === 'critical' && z.floodRisk >= z.droughtRisk){
+    return {priority:'critical', title:`Improve drainage in Zone ${z.label}`,
+      body:`Flood risk is elevated in Zone ${z.label} following recent rainfall. Standing water risk may affect root health.`,
+      actions:['Check and clear drainage channels near this zone','Postpone irrigation until soil moisture normalizes','Re-inspect after next rainfall event']};
+  }
+  if (st === 'critical'){
+    return {priority:'critical', title:`Prioritize irrigation for Zone ${z.label}`,
+      body:`Drought stress indicators are elevated. Soil moisture is trending well below the crop's optimal range for this growth stage.`,
+      actions:['Schedule irrigation within 24–48 hours','Reduce evapotranspiration loss with mulching where possible','Recheck soil moisture after irrigation']};
+  }
+  if (st === 'moderate'){
+    return {priority:'moderate', title:`Monitor Zone ${z.label} closely`,
+      body:`Zone ${z.label} shows early signs of stress. No immediate action required, but conditions should be tracked over the coming days.`,
+      actions:['Re-scan zone in 48–72 hours','Maintain standard irrigation schedule','Flag for next routine inspection']};
+  }
+  return {priority:'low', title:`Zone ${z.label} is on track`,
+    body:`All monitored indicators for Zone ${z.label} are within healthy range for ${fieldName}.`,
+    actions:['No action required','Continue standard monitoring cadence']};
+}
+
+function buildField(farmSeed, fieldId, fieldName, crop, area, stage, overrideZones){
+  let zones;
+  if (overrideZones){
+    zones = overrideZones;
+  } else {
+    zones = ZONE_LETTERS.map((_,i)=>genZone(farmSeed+'-'+fieldId, i, crop));
+  }
+  zones.forEach(z=>{ z.status = statusFor(z); z.reasons = reasonsFor(z); z.recommendation = recommendationFor(z, fieldName); });
+  return {id:fieldId, name:fieldName, crop, area, stage, zones};
+}
+
+// Hand-crafted featured field matching the reference demo scenario (Zone C)
+const F02_ZONES = [
+  {id:'field-02-zA', label:'A', crop:'Rice', ndvi:0.81, soilMoisture:44, temperature:27.8, humidity:66, rainfall:6,  diseaseRisk:9,  droughtRisk:12, floodRisk:6,  yieldEstimate:5.4, confidence:93},
+  {id:'field-02-zB', label:'B', crop:'Rice', ndvi:0.77, soilMoisture:41, temperature:28.1, humidity:69, rainfall:8,  diseaseRisk:16, droughtRisk:14, floodRisk:9,  yieldEstimate:5.1, confidence:92},
+  {id:'field-02-zC', label:'C', crop:'Rice', ndvi:0.58, soilMoisture:24, temperature:31.4, humidity:84, rainfall:22, diseaseRisk:72, droughtRisk:31, floodRisk:18, yieldEstimate:3.9, confidence:87},
+  {id:'field-02-zD', label:'D', crop:'Rice', ndvi:0.62, soilMoisture:61, temperature:27.2, humidity:81, rainfall:52, diseaseRisk:28, droughtRisk:8,  floodRisk:64, yieldEstimate:4.2, confidence:90},
+  {id:'field-02-zE', label:'E', crop:'Rice', ndvi:0.79, soilMoisture:39, temperature:28.4, humidity:70, rainfall:11, diseaseRisk:14, droughtRisk:17, floodRisk:11, yieldEstimate:5.2, confidence:94},
+  {id:'field-02-zF', label:'F', crop:'Rice', ndvi:0.74, soilMoisture:35, temperature:29.0, humidity:73, rainfall:14, diseaseRisk:22, droughtRisk:24, floodRisk:13, yieldEstimate:4.8, confidence:91},
+];
+
+const FARMS = [
+  { id:'green-valley', name:'Green Valley Farm', location:'Palakkad, Kerala', area:'12.4 ha', crop:'Rice', stage:'Flowering',
+    lastUpdated:'8 min ago', confidence:91,
+    weather:{temp:29, humidity:78, wind:12, rainfall:4.2, cloud:82, pressure:1008},
+    kpis:{cropHealth:82, soilMoisture:38, diseaseRisk:67, yieldForecast:4.8},
+    fields:[
+      buildField('gv','field-01','Field 01','Rice','3.8 ha','Tillering'),
+      buildField('gv','field-02','Field 02','Rice','3.2 ha','Flowering', F02_ZONES),
+      buildField('gv','field-03','Field 03','Rice','5.4 ha','Vegetative'),
+    ]},
+  { id:'kerala-demo', name:'Kerala Demo Farm', location:'Thrissur, Kerala', area:'8.1 ha', crop:'Banana', stage:'Vegetative',
+    lastUpdated:'22 min ago', confidence:88,
+    weather:{temp:31, humidity:74, wind:9, rainfall:1.1, cloud:58, pressure:1011},
+    kpis:{cropHealth:75, soilMoisture:44, diseaseRisk:33, yieldForecast:31.2},
+    fields:[
+      buildField('kd','field-01','Field 01','Banana','2.6 ha','Vegetative'),
+      buildField('kd','field-02','Field 02','Banana','2.9 ha','Vegetative'),
+      buildField('kd','field-03','Field 03','Banana','2.6 ha','Early growth'),
+    ]},
+  { id:'field-alpha', name:'Field Alpha', location:'Wayanad, Kerala', area:'4.6 ha', crop:'Pepper', stage:'Flowering',
+    lastUpdated:'5 min ago', confidence:94,
+    weather:{temp:24, humidity:88, wind:6, rainfall:9.6, cloud:91, pressure:1004},
+    kpis:{cropHealth:88, soilMoisture:57, diseaseRisk:41, yieldForecast:2.1},
+    fields:[
+      buildField('fa','field-01','Field 01','Pepper','2.3 ha','Flowering'),
+      buildField('fa','field-02','Field 02','Pepper','2.3 ha','Flowering'),
+    ]},
+  { id:'field-beta', name:'Field Beta', location:'Idukki, Kerala', area:'6.0 ha', crop:'Cardamom', stage:'Maturity',
+    lastUpdated:'15 min ago', confidence:85,
+    weather:{temp:22, humidity:91, wind:5, rainfall:14.8, cloud:95, pressure:1002},
+    kpis:{cropHealth:69, soilMoisture:62, diseaseRisk:58, yieldForecast:0.6},
+    fields:[
+      buildField('fb','field-01','Field 01','Cardamom','3.0 ha','Maturity'),
+      buildField('fb','field-02','Field 02','Cardamom','3.0 ha','Maturity'),
+    ]},
+];
+
+function getFarm(id){ return FARMS.find(f=>f.id===id) || FARMS[0]; }
+function getField(farm, fieldId){ return farm.fields.find(f=>f.id===fieldId) || farm.fields[0]; }
+function getZone(field, zoneId){ return field.zones.find(z=>z.id===zoneId); }
+
+const TIME_LABELS_24H = Array.from({length:8},(_,i)=>`${(i*3).toString().padStart(2,'0')}:00`);
+const DAY_LABELS_7 = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+function series(seed, n, base, spread){
+  const r = rngFrom(seed);
+  return Array.from({length:n},()=>round1(base + (r()-0.5)*spread));
+}
+
+/* ============================= STATE ============================= */
+const STATE = {
+  view: 'home',
+  farmId: 'green-valley',
+  fieldId: 'field-02',
+  zoneId: null,
+  panelTab: 'overview',
+  panelOpen: false,
+  sidebarOpen: false,
+  activeLayer: 'cropHealth',
+  offline: false,
+  alerts: [
+    {id:'al-1', ts:'Today, 06:42', field:'Field Alpha · Field 01', zone:'B', message:'Drought risk elevated (58%) — irrigation recommended within 48 hours.', channel:'App + SMS', status:'Sent'},
+    {id:'al-2', ts:'Yesterday, 17:10', field:'Field Beta · Field 02', zone:'D', message:'Heavy rainfall expected — fertilizer application postponed.', channel:'SMS', status:'Sent'},
+  ],
+  toasts: [],
+  demoRunning:false,
+};
+let charts = {}; // active Chart.js instances to destroy on re-render
+
+function fmtPct(n){return n+'%';}
+function riskWord(v){ if(v>=60) return 'Critical'; if(v>=30) return 'Elevated'; return 'Low'; }
+function riskBadgeClass(v){ if(v>=60) return 'red'; if(v>=30) return 'amber'; return 'green'; }
+function statusBadgeClass(st){ return st==='critical'?'red':st==='moderate'?'amber':'green'; }
+
+/* ============================= TOASTS ============================= */
+function toast(title, body, ms){
+  const id = 't'+Date.now()+Math.random();
+  STATE.toasts.push({id,title,body});
+  renderToasts();
+  setTimeout(()=>{ STATE.toasts = STATE.toasts.filter(t=>t.id!==id); renderToasts(); }, ms||4200);
+}
+function renderToasts(){
+  document.getElementById('toasts').innerHTML = STATE.toasts.map(t=>`
+    <div class="toast"><span style="margin-top:1px">${ic('info')}</span><div><b>${t.title}</b>${t.body||''}</div></div>
+  `).join('');
+}
+
+/* ============================= NAV CONFIG ============================= */
+const NAV = [
+  {id:'home', label:'Home', icon:'dashboard', group:null},
+  {id:'dashboard', label:'Dashboard', icon:'dashboard', group:'Monitor'},
+  {id:'field', label:'Field Intelligence', icon:'field', group:'Monitor'},
+  {id:'map', label:'Hyper-Local Map', icon:'map', group:'Monitor'},
+  {id:'weather', label:'Weather', icon:'weather', group:'Monitor'},
+  {id:'soil', label:'Soil & Moisture', icon:'soil', group:'Monitor'},
+  {id:'crop', label:'Crop Health', icon:'leaf', group:'Monitor'},
+  {id:'disease', label:'Disease Risk', icon:'bug', group:'Risk'},
+  {id:'droughtflood', label:'Drought & Flood', icon:'drop', group:'Risk'},
+  {id:'yield', label:'Yield Prediction', icon:'yield', group:'Risk'},
+  {id:'explainable', label:'AI Explainability', icon:'brain', group:'Risk'},
+  {id:'recommendations', label:'Recommendations', icon:'target', group:'Act'},
+  {id:'alerts', label:'Alerts', icon:'bell', group:'Act'},
+  {id:'datasources', label:'Data Sources', icon:'db', group:'System'},
+  {id:'model', label:'System Transparency', icon:'layers', group:'System'},
+  {id:'settings', label:'Settings', icon:'settings', group:'System'},
+];
+const MOBILE_TABS = ['dashboard','map','recommendations','alerts'];
+
+/* ============================= SHELL RENDER ============================= */
+function navigate(view, opts){
+  STATE.view = view;
+  STATE.sidebarOpen = false;
+  if (opts && opts.zoneId !== undefined) STATE.zoneId = opts.zoneId;
+  render();
+  window.scrollTo({top:0});
+}
+
+function render(){
+  Object.values(charts).forEach(c=>{try{c.destroy();}catch(e){}});
+  charts = {};
+  const farm = getFarm(STATE.farmId);
+  const app = document.getElementById('app');
+
+  const sidebarHtml = `
+  <div class="sidebar-scrim" style="display:${STATE.sidebarOpen?'block':'none'}" onclick="STATE.sidebarOpen=false;render();"></div>
+  <aside id="sidebar" class="${STATE.sidebarOpen?'open':''}">
+    <div class="sb-brand">
+      <div class="sb-brand-mark">${ICONS.logo}</div>
+      <div>
+        <div class="sb-brand-text">Climate Intelligence</div>
+        <div class="sb-brand-sub">Precision Agriculture</div>
+      </div>
+    </div>
+    <nav class="sb-nav">
+      ${renderNavGroup(null)}
+      ${['Monitor','Risk','Act','System'].map(g=>`
+        <div class="sb-section-label">${g.toUpperCase()}</div>
+        ${renderNavGroup(g)}
+      `).join('')}
+    </nav>
+    <div class="sb-foot">
+      <div class="sync-pill"><span class="sync-dot"></span> Synced ${farm.lastUpdated}</div>
+    </div>
+  </aside>`;
+
+  const topbarTitle = NAV.find(n=>n.id===STATE.view)?.label || '';
+  const topbarHtml = `
+  <div id="topbar">
+    <button class="iconbtn hamburger" onclick="STATE.sidebarOpen=true;render();" aria-label="Open menu">${ic('menu')}</button>
+    <div class="tb-title">${topbarTitle}</div>
+    <div class="farmpick">
+      ${STATE.view!=='home' && STATE.view!=='settings' && STATE.view!=='datasources' && STATE.view!=='model' && STATE.view!=='alerts' ? `
+      <div class="select-wrap">
+        <select class="pill-select" onchange="onFarmChange(this.value)">
+          ${FARMS.map(f=>`<option value="${f.id}" ${f.id===STATE.farmId?'selected':''}>${f.name}</option>`).join('')}
+        </select>
+      </div>` : ''}
+      <button class="iconbtn" onclick="STATE.offline=!STATE.offline;render();${''}" title="Toggle connectivity (demo)">
+        ${STATE.offline?ic('wifi_off'):ic('info')}
+      </button>
+      <button class="iconbtn" onclick="navigate('alerts')" title="Alerts" style="position:relative;">
+        ${ic('bell')}
+        ${STATE.alerts.length?`<span style="position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:9.5px;font-weight:700;border-radius:999px;min-width:15px;height:15px;display:flex;align-items:center;justify-content:center;">${STATE.alerts.length}</span>`:''}
+      </button>
+    </div>
+  </div>
+  ${STATE.offline?`<div class="offline-strip">${ic('wifi_off')} Offline Mode — showing cached data · Last synchronized ${farm.lastUpdated}</div>`:''}
+  `;
+
+  const tabbarHtml = `
+  <div class="tabbar">
+    ${MOBILE_TABS.map(id=>{
+      const n = NAV.find(x=>x.id===id);
+      return `<div class="tb-item ${STATE.view===id?'active':''}" onclick="navigate('${id}')">${ic(n.icon)}<span>${n.label.split(' ')[0]}</span></div>`;
+    }).join('')}
+    <div class="tb-item ${STATE.sidebarOpen?'active':''}" onclick="STATE.sidebarOpen=true;render();">${ic('menu')}<span>Menu</span></div>
+  </div>`;
+
+  app.innerHTML = `
+  <div id="shell">
+    ${sidebarHtml}
+    <div id="main-col">
+      ${topbarHtml}
+      <div id="view" class="fade-in">${renderView(farm)}</div>
+    </div>
+  </div>
+  <div class="panel-overlay ${STATE.panelOpen?'open':''}" onclick="closePanel()"></div>
+  <aside id="zonepanel" class="${STATE.panelOpen?'open':''}">${renderZonePanel(farm)}</aside>
+  ${tabbarHtml}
+  `;
+  renderToasts();
+  mountView(farm);
+}
+
+function renderNavGroup(group){
+  return NAV.filter(n=>n.group===group).map(n=>`
+    <div class="sb-item ${STATE.view===n.id?'active':''}" onclick="navigate('${n.id}')" role="button" tabindex="0">
+      ${ic(n.icon)}<span>${n.label}</span>
+      ${n.id==='alerts' && STATE.alerts.length ? `<span class="sb-badge">${STATE.alerts.length}</span>`:''}
+    </div>
+  `).join('');
+}
+
+function onFarmChange(id){
+  STATE.farmId = id;
+  const farm = getFarm(id);
+  STATE.fieldId = farm.fields[0].id;
+  STATE.zoneId = null;
+  STATE.panelOpen = false;
+  toast('Farm switched', `Now viewing ${farm.name}.`);
+  render();
+}
+
+/* ============================= VIEW ROUTER ============================= */
+function renderView(farm){
+  switch(STATE.view){
+    case 'home': return viewHome();
+    case 'dashboard': return viewDashboard(farm);
+    case 'field': return viewField(farm);
+    case 'map': return viewMap(farm);
+    case 'weather': return viewWeather(farm);
+    case 'soil': return viewSoil(farm);
+    case 'crop': return viewCrop(farm);
+    case 'disease': return viewDisease(farm);
+    case 'droughtflood': return viewDroughtFlood(farm);
+    case 'yield': return viewYield(farm);
+    case 'explainable': return viewExplainable(farm);
+    case 'recommendations': return viewRecommendations(farm);
+    case 'alerts': return viewAlerts(farm);
+    case 'datasources': return viewDataSources();
+    case 'model': return viewModel();
+    case 'settings': return viewSettings(farm);
+    default: return viewHome();
+  }
+}
+function mountView(farm){
+  if (STATE.view==='dashboard') mountDashboard(farm);
+  if (STATE.view==='field') mountField(farm);
+  if (STATE.view==='weather') mountWeather(farm);
+  if (STATE.view==='soil') mountSoil(farm);
+  if (STATE.view==='crop') mountCrop(farm);
+  if (STATE.view==='disease') mountDisease(farm);
+  if (STATE.view==='droughtflood') mountDroughtFlood(farm);
+  if (STATE.view==='yield') mountYield(farm);
+  if (STATE.view==='home') mountHome();
+  animatePipelines();
+}
+
+/* ============================= SHARED COMPONENTS ============================= */
+function pipelineHtml(idSuffix){
+  const steps = [
+    {t:'Raw Data', s:'Satellite · IoT · Weather', i:'sat'},
+    {t:'Data Fusion', s:'Multimodal alignment', i:'layers'},
+    {t:'AI Engine', s:'Hyper-local inference', i:'chip'},
+    {t:'Risk Prediction', s:'Zone-level scoring', i:'target'},
+    {t:'Explainable AI', s:'Reasoning &amp; drivers', i:'brain'},
+    {t:'Recommendation', s:'Actionable guidance', i:'check'},
+    {t:'Farmer Alert', s:'App + SMS delivery', i:'bell'},
+  ];
+  return `<div class="pipeline" id="pipeline-${idSuffix}">
+    ${steps.map((s,i)=>`
+      <div class="pipe-step">
+        ${i>0?`<div class="pipe-line"></div><div class="pipe-flow" data-flow></div>`:''}
+        <div class="pipe-circle">${ic(s.i)}</div>
+        <div class="pipe-title">${s.t}</div>
+        <div class="pipe-sub">${s.s}</div>
+      </div>
+    `).join('')}
+  </div>`;
+}
+function animatePipelines(){
+  document.querySelectorAll('[data-flow]').forEach((el,i)=>{
+    setTimeout(()=>{ el.style.width='100%'; }, 120+i*90);
+  });
+}
+
+function kpiCard(icon, color, label, value, sub, barPct){
+  const colorMap = {emerald:['var(--green-bg)','var(--emerald-dk)'], amber:['var(--amber-bg)','var(--amber)'], red:['var(--red-bg)','var(--red)'], blue:['var(--blue-bg)','var(--blue)'], navy:['var(--bg)','var(--navy-3)']};
+  const [bg,fg] = colorMap[color]||colorMap.navy;
+  return `<div class="card kpi hoverlift">
+    <div class="kpi-top">
+      <div class="kpi-icon" style="background:${bg};color:${fg}">${ic(icon)}</div>
+      ${sub?`<span class="badge ${color==='red'?'red':color==='amber'?'amber':'gray'}">${sub}</span>`:''}
+    </div>
+    <div class="kpi-val mono-num">${value}</div>
+    <div class="kpi-label">${label}</div>
+    ${barPct!==undefined?`<div class="kpi-bar"><div style="width:${barPct}%;background:${fg}"></div></div>`:''}
+  </div>`;
+}
+
+function zoneGridHtml(field, layerKey){
+  const layerVal = (z)=>{
+    switch(layerKey){
+      case 'cropHealth': return {v:Math.round(z.ndvi*100)+'', unit:'', st: z.ndvi>=0.7?'healthy':z.ndvi>=0.5?'moderate':'critical'};
+      case 'ndvi': return {v:z.ndvi.toFixed(2), unit:'', st: z.ndvi>=0.7?'healthy':z.ndvi>=0.5?'moderate':'critical'};
+      case 'soilMoisture': return {v:z.soilMoisture, unit:'%', st: z.soilMoisture>=35?'healthy':z.soilMoisture>=20?'moderate':'critical'};
+      case 'temperature': return {v:z.temperature, unit:'°C', st: z.temperature<28?'healthy':z.temperature<32?'moderate':'critical'};
+      case 'rainfall': return {v:z.rainfall, unit:'mm', st: z.rainfall<20?'healthy':z.rainfall<40?'moderate':'critical'};
+      case 'diseaseRisk': return {v:z.diseaseRisk, unit:'%', st: z.diseaseRisk<30?'healthy':z.diseaseRisk<60?'moderate':'critical'};
+      case 'droughtRisk': return {v:z.droughtRisk, unit:'%', st: z.droughtRisk<30?'healthy':z.droughtRisk<60?'moderate':'critical'};
+      case 'floodRisk': return {v:z.floodRisk, unit:'%', st: z.floodRisk<30?'healthy':z.floodRisk<60?'moderate':'critical'};
+      default: return {v:'-', unit:'', st:z.status};
+    }
+  };
+  return `<div class="zone-grid">
+    ${field.zones.map(z=>{
+      const lv = layerVal(z);
+      return `<div class="zone-cell ${lv.st} ${STATE.zoneId===z.id?'selected':''}" onclick="openZone('${z.id}')" role="button" tabindex="0" aria-label="Zone ${z.label}, ${STATE.zoneId} status ${STATUS_LABEL[lv.st]}">
+        <div class="zc-top"><span class="zc-label">${z.label}</span>${lv.st==='critical'?'<span class="zc-pulse"></span>':''}</div>
+        <div class="zc-bottom">
+          <div class="zc-metric">${lv.v}${lv.unit}</div>
+          <div class="zc-status">${STATUS_LABEL[lv.st]}</div>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function layerSwitcherHtml(){
+  const layers = [
+    ['cropHealth','Crop Health'],['ndvi','NDVI'],['soilMoisture','Soil Moisture'],['temperature','Temperature'],
+    ['rainfall','Rainfall'],['diseaseRisk','Disease Risk'],['droughtRisk','Drought Risk'],['floodRisk','Flood Risk'],
+  ];
+  return `<div class="layer-switch">
+    ${layers.map(([k,l])=>`<button class="layer-chip ${STATE.activeLayer===k?'active':''}" onclick="STATE.activeLayer='${k}';render();">${STATE.activeLayer===k?ic('check'):''}${l}</button>`).join('')}
+  </div>`;
+}
+
+function legendHtml(){
+  return `<div class="legend-row">
+    <div class="legend-item"><span class="dot green"></span> Healthy</div>
+    <div class="legend-item"><span class="dot amber"></span> Moderate Stress</div>
+    <div class="legend-item"><span class="dot red"></span> Critical Risk</div>
+    <div class="legend-item" style="margin-left:auto"><span class="demo-tag">${ic('info')} Demo Data</span></div>
+  </div>`;
+}
+
+function confidenceBadge(v){
+  const cls = v>=85?'green':v>=70?'amber':'red';
+  return `<span class="badge ${cls}">${ic('gauge')} ${v}% confidence</span>`;
+}
+function dataQualityBadge(){
+  return `<span class="badge blue">${ic('sat')} Optical + SAR fused</span>`;
+}
+
+/* ============================= HOME / LANDING ============================= */
+function viewHome(){
+  return `
+  <div class="landing-hero">
+    <span class="demo-tag" style="margin-bottom:16px;display:inline-flex">${ic('sat')} Satellite · SAR · IoT · Weather — fused in real time</span>
+    <h1>Hyper-Local Climate Intelligence &amp; Precision Agriculture</h1>
+    <p class="sub">From Data to Decisions. From Decisions to Better Farming.</p>
+    <div class="hero-cta">
+      <button class="btn btn-emerald" onclick="navigate('dashboard')">${ic('dashboard')} Explore Farm Intelligence</button>
+      <button class="btn btn-outline" onclick="runDemo()">${ic('play')} View Demo</button>
+    </div>
+  </div>
+
+  <div class="card card-pad" style="max-width:1000px;margin:0 auto 10px;">
+    <div class="field-stage" style="min-height:280px;padding:16px;">
+      <div class="zone-grid" style="grid-template-columns:repeat(4,1fr);height:100%;">
+        ${[['A','Healthy','healthy','91'],['B','Moderate Stress','moderate','74'],['C','Critical Risk','critical','58'],['D','Healthy','healthy','88']].map(([l,label,st,v])=>`
+          <div class="zone-cell ${st}">
+            <div class="zc-top"><span class="zc-label">${l}</span>${st==='critical'?'<span class="zc-pulse"></span>':''}</div>
+            <div class="zc-bottom"><div class="zc-metric">${v}%</div><div class="zc-status">${label}</div></div>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div class="legend-row" style="margin-top:14px;"><span class="dot green"></span> Healthy &nbsp;<span class="dot amber"></span> Moderate Stress &nbsp;<span class="dot red"></span> Critical Risk
+      <span style="margin-left:auto" class="demo-tag">${ic('info')} Illustrative zone preview</span></div>
+  </div>
+
+  <div style="max-width:900px;margin:52px auto 10px;text-align:center;">
+    <h2 style="font-size:23px;margin:0 0 8px;">Farmers don't experience regional weather.</h2>
+    <p style="color:var(--muted);font-size:15px;margin:0;">They experience conditions in their own specific field.</p>
+  </div>
+
+  <div class="problem-grid">
+    ${[
+      ['01','Weather Variability','Microclimates shift drastically across short distances.','cloud'],
+      ['02','Field Heterogeneity','Crop health varies heavily even between neighboring plots.','field'],
+      ['03','Rapid Outbreaks','Pest and disease cycles develop aggressively under localized humidity.','bug'],
+      ['04','Soil Variations','Irrigation needs depend on local soil texture.','soil'],
+    ].map(([n,t,d,ic_])=>`
+      <div class="card pcard hoverlift">
+        <div class="pnum">${n}</div>
+        <div style="width:34px;height:34px;border-radius:9px;background:var(--green-bg);color:var(--emerald-dk);display:flex;align-items:center;justify-content:center;margin-bottom:12px;">${ic(ic_)}</div>
+        <div style="font-weight:700;margin-bottom:5px;">${t}</div>
+        <div style="color:var(--muted);font-size:12.8px;">${d}</div>
+      </div>`).join('')}
+  </div>
+
+  <div class="card card-pad" style="max-width:900px;margin:30px auto 50px;text-align:center;background:var(--navy);border:none;">
+    <p style="color:#fff;font-size:15.5px;margin:0 0 4px;font-weight:600;">Generic weather forecasts and isolated data points are insufficient for field-level decision-making.</p>
+    <p style="color:#9FB1CE;font-size:12.8px;margin:0 0 18px;">This platform fuses satellite optical imagery, Sentinel-1 SAR radar, weather APIs, IoT sensors, soil data, and farm history into one hyper-local intelligence layer.</p>
+    <button class="btn btn-emerald" onclick="navigate('dashboard')">${ic('dashboard')} Open Farmer Dashboard</button>
+  </div>
+
+  <div class="card card-pad" style="max-width:1100px;margin:0 auto 40px;">
+    <div class="section-title">How the pipeline works</div>
+    <div class="section-sub">Raw signal to farmer action, end to end.</div>
+    ${pipelineHtml('home')}
+  </div>
+  `;
+}
+function mountHome(){}
+
+/* ============================= DASHBOARD ============================= */
+function viewDashboard(farm){
+  const field = getField(farm, STATE.fieldId);
+  return `
+  <div class="grid" style="gap:16px;">
+    <div class="card card-pad">
+      <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;justify-content:space-between;">
+        <div>
+          <div class="eyebrow">SELECTED FARM</div>
+          <div style="font-family:'Space Grotesk';font-size:20px;font-weight:700;margin:2px 0 8px;">${farm.name}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:16px;font-size:12.8px;color:var(--muted);">
+            <span><b style="color:var(--text)">${farm.location}</b> location</span>
+            <span><b style="color:var(--text)">${farm.area}</b> area</span>
+            <span><b style="color:var(--text)">${farm.crop}</b> crop</span>
+            <span><b style="color:var(--text)">${farm.stage}</b> growth stage</span>
+            <span><b style="color:var(--text)">${farm.lastUpdated}</b> last updated</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          ${confidenceBadge(farm.confidence)}
+          <button class="btn btn-outline btn-sm" onclick="runDemo()">${ic('play')} Run Demo</button>
+        </div>
+      </div>
+      <div class="field-select-row" style="margin-top:16px;margin-bottom:0;">
+        ${farm.fields.map(f=>`<button class="chip-btn ${STATE.fieldId===f.id?'active':''}" onclick="STATE.fieldId='${f.id}';STATE.zoneId=null;render();">${f.name}</button>`).join('')}
+      </div>
+    </div>
+
+    <div class="grid" style="grid-template-columns:repeat(4,1fr);" id="kpi-grid">
+      ${kpiCard('leaf','emerald','Crop Health', farm.kpis.cropHealth+'%', 'Healthy', farm.kpis.cropHealth)}
+      ${kpiCard('soil','blue','Soil Moisture', farm.kpis.soilMoisture+'%', 'Moderate', farm.kpis.soilMoisture)}
+      ${kpiCard('bug', farm.kpis.diseaseRisk>=60?'red':'amber','Disease Risk', farm.kpis.diseaseRisk+'%', riskWord(farm.kpis.diseaseRisk), farm.kpis.diseaseRisk)}
+      ${kpiCard('yield','navy','Yield Forecast', farm.kpis.yieldForecast+' t/ha', farm.crop, undefined)}
+    </div>
+    <div class="grid" style="grid-template-columns:repeat(3,1fr);">
+      ${kpiCard('weather','blue','Temperature', farm.weather.temp+'°C', farm.weather.humidity+'% humidity', undefined)}
+      ${kpiCard('drop','blue','Water Stress', Math.max(0,100-farm.kpis.soilMoisture)+'%', 'vs. optimal range', 100-farm.kpis.soilMoisture)}
+      ${kpiCard('cloud','navy','Rainfall (24h)', farm.weather.rainfall+' mm', farm.weather.cloud+'% cloud cover', undefined)}
+    </div>
+
+    <div class="two-col">
+      <div class="card card-pad">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
+          <div><div class="section-title">Hyper-Local Farm Map — ${field.name}</div><div class="section-sub">Click any zone for a full breakdown and AI reasoning.</div></div>
+          <button class="btn btn-outline btn-sm" onclick="navigate('map')">${ic('map')} Full map view</button>
+        </div>
+        <div class="field-stage">${zoneGridHtml(field, STATE.activeLayer)}</div>
+        ${legendHtml()}
+      </div>
+      <div class="card card-pad">
+        <div class="section-title">Top Recommendations</div>
+        <div class="section-sub">Generated from current zone-level analysis.</div>
+        ${topRecommendations(farm,3)}
+        <button class="btn btn-outline btn-sm" style="width:100%;margin-top:6px;" onclick="navigate('recommendations')">View all recommendations</button>
+      </div>
+    </div>
+
+    <div class="card card-pad">
+      <div class="section-title">Data → Decision Pipeline</div>
+      <div class="section-sub">${farm.name} is currently processing 6 live inputs through the hyper-local AI engine.</div>
+      ${pipelineHtml('dash')}
+    </div>
+  </div>`;
+}
+function topRecommendations(farm,n){
+  const all = [];
+  farm.fields.forEach(f=>f.zones.forEach(z=>all.push({...z.recommendation, field:f.name, zoneLabel:z.label, zoneId:z.id, priorityRank:{critical:0,moderate:1,low:2}[z.recommendation.priority]})));
+  all.sort((a,b)=>a.priorityRank-b.priorityRank);
+  return all.slice(0,n).map(r=>`
+    <div class="rec-card hoverlift" style="cursor:pointer" onclick="openZone('${r.zoneId}')">
+      <div class="rc-head">
+        <div style="font-weight:700;font-size:13px;">${r.title}</div>
+        <span class="badge ${r.priority==='critical'?'red':r.priority==='moderate'?'amber':'green'}">${r.priority}</span>
+      </div>
+      <div style="color:var(--muted);font-size:12px;">${r.field} · Zone ${r.zoneLabel}</div>
+    </div>
+  `).join('') || '<div style="color:var(--muted);font-size:13px;">No active recommendations.</div>';
+}
+function mountDashboard(farm){}
+
+/* ============================= FIELD INTELLIGENCE ============================= */
+function viewField(farm){
+  const field = getField(farm, STATE.fieldId);
+  const avg = (key)=>Math.round(field.zones.reduce((s,z)=>s+z[key],0)/field.zones.length);
+  const vegetation = Math.round(field.zones.reduce((s,z)=>s+z.ndvi*100,0)/field.zones.length);
+  const soil = Math.min(100, Math.round(avg('soilMoisture')*1.7));
+  const weatherScore = Math.max(0, 100-Math.round(avg('temperature')*1.6));
+  const water = Math.max(0, 100-Math.round((100-avg('soilMoisture'))*0.9));
+  const disease = Math.max(0, 100-avg('diseaseRisk'));
+  const overall = Math.round((vegetation+soil+weatherScore+water+disease)/5);
+  return `
+  <div class="grid" style="gap:16px;">
+    <div class="card card-pad">
+      <div class="field-select-row" style="margin-bottom:14px;">
+        ${farm.fields.map(f=>`<button class="chip-btn ${STATE.fieldId===f.id?'active':''}" onclick="STATE.fieldId='${f.id}';render();">${f.name}</button>`).join('')}
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:22px;font-size:12.8px;">
+        <div><div class="eyebrow">FARM</div><div style="font-weight:700;">${farm.name}</div></div>
+        <div><div class="eyebrow">FIELD</div><div style="font-weight:700;">${field.name}</div></div>
+        <div><div class="eyebrow">CROP</div><div style="font-weight:700;">${field.crop}</div></div>
+        <div><div class="eyebrow">AREA</div><div style="font-weight:700;">${field.area}</div></div>
+        <div><div class="eyebrow">GROWTH STAGE</div><div style="font-weight:700;">${field.stage}</div></div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="card card-pad">
+        <div class="section-title">Overall Field Health</div>
+        <div style="display:flex;align-items:baseline;gap:8px;margin:6px 0 16px;">
+          <div style="font-family:'Space Grotesk';font-size:40px;font-weight:700;">${overall}</div>
+          <div style="color:var(--muted);font-size:14px;">/ 100</div>
+          <span class="badge ${overall>=75?'green':overall>=55?'amber':'red'}" style="margin-left:auto">${overall>=75?'Healthy':overall>=55?'Moderate':'Needs attention'}</span>
+        </div>
+        ${[['Vegetation',vegetation,'leaf'],['Soil',soil,'soil'],['Weather',weatherScore,'weather'],['Water',water,'drop'],['Disease',disease,'bug']].map(([l,v,i])=>`
+          <div style="margin-bottom:11px;">
+            <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px;"><span style="display:flex;align-items:center;gap:6px;color:var(--muted)">${ic(i)} ${l}</span><b>${v}</b></div>
+            <div class="kpi-bar"><div style="width:${v}%;background:${v>=70?'var(--emerald)':v>=45?'var(--amber)':'var(--red)'}"></div></div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="card card-pad">
+        <div class="section-title">Zones in ${field.name}</div>
+        <div class="section-sub">${field.zones.length} monitored zones · ~10–20m grid resolution</div>
+        <table class="dtab">
+          <thead><tr><th>Zone</th><th>Status</th><th>NDVI</th><th>Disease</th><th>Yield</th></tr></thead>
+          <tbody>
+            ${field.zones.map(z=>`<tr style="cursor:pointer" onclick="openZone('${z.id}')">
+              <td><b>Zone ${z.label}</b></td>
+              <td><span class="badge ${statusBadgeClass(z.status)}">${STATUS_LABEL[z.status]}</span></td>
+              <td>${z.ndvi}</td>
+              <td>${z.diseaseRisk}%</td>
+              <td>${z.yieldEstimate} t/ha</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="card card-pad"><div class="section-title">NDVI Trend</div><div class="section-sub">Last 30 days · ${field.name}</div><div class="chart-wrap"><canvas id="chart-field-ndvi"></canvas></div></div>
+      <div class="card card-pad"><div class="section-title">Disease Risk Trend</div><div class="section-sub">Last 30 days · ${field.name}</div><div class="chart-wrap"><canvas id="chart-field-disease"></canvas></div></div>
+    </div>
+  </div>`;
+}
+function mountField(farm){
+  const field = getField(farm, STATE.fieldId);
+  const labels = Array.from({length:30},(_,i)=>'D'+(i+1));
+  const seed = STATE.farmId+STATE.fieldId;
+  const ndvi = series(seed+'ndvi',30,0.68,0.22).map(v=>Math.max(0.2,Math.min(0.95,v)));
+  const disease = series(seed+'dis',30,35,40).map(v=>Math.max(2,Math.min(90,v)));
+  charts.fieldNdvi = new Chart(document.getElementById('chart-field-ndvi'),{type:'line',data:{labels,datasets:[{data:ndvi,borderColor:'#0E9F6B',backgroundColor:'rgba(14,159,107,.1)',fill:true,tension:.35,pointRadius:0,borderWidth:2}]},options:baseChartOpts({min:0,max:1})});
+  charts.fieldDisease = new Chart(document.getElementById('chart-field-disease'),{type:'line',data:{labels,datasets:[{data:disease,borderColor:'#D6362C',backgroundColor:'rgba(214,54,44,.1)',fill:true,tension:.35,pointRadius:0,borderWidth:2}]},options:baseChartOpts({min:0,max:100})});
+}
+function baseChartOpts(yrange){
+  return {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}, tooltip:{mode:'index',intersect:false}},
+    scales:{
+      x:{grid:{display:false}, ticks:{maxTicksLimit:6, color:'#8A93A3', font:{size:10.5}}},
+      y:{min:yrange?.min, max:yrange?.max, grid:{color:'rgba(138,147,163,.12)'}, ticks:{color:'#8A93A3', font:{size:10.5}}},
+    },
+    interaction:{mode:'nearest',axis:'x',intersect:false},
+  };
+}
+
+/* ============================= MAP ============================= */
+function viewMap(farm){
+  const field = getField(farm, STATE.fieldId);
+  return `
+  <div class="grid" style="gap:16px;">
+    <div class="card card-pad">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;align-items:center;">
+        <div>
+          <div class="section-title">Interactive Hyper-Local Farm Map</div>
+          <div class="section-sub">${farm.name} · ${field.name} · ~10–20m grid zones</div>
+        </div>
+        <div class="field-select-row" style="margin:0;">
+          ${farm.fields.map(f=>`<button class="chip-btn ${STATE.fieldId===f.id?'active':''}" onclick="STATE.fieldId='${f.id}';STATE.zoneId=null;render();">${f.name}</button>`).join('')}
+        </div>
+      </div>
+      <hr class="rule">
+      <div class="eyebrow" style="margin-bottom:8px;">ACTIVE LAYER</div>
+      ${layerSwitcherHtml()}
+      <div class="field-stage" style="margin-top:16px;min-height:440px;">${zoneGridHtml(field, STATE.activeLayer)}</div>
+      ${legendHtml()}
+    </div>
+  </div>`;
+}
+function openZone(zoneId){
+  STATE.zoneId = zoneId;
+  STATE.panelOpen = true;
+  STATE.panelTab = 'overview';
+  render();
+}
+function closePanel(){
+  STATE.panelOpen = false;
+  render();
+}
+function renderZonePanel(farm){
+  if (!STATE.zoneId) return '';
+  const field = getField(farm, STATE.fieldId);
+  let z = getZone(field, STATE.zoneId);
+  if (!z){ for (const f of farm.fields){ const found = getZone(f, STATE.zoneId); if(found){ z=found; break; } } }
+  if (!z) return '';
+  const tabs = [['overview','Overview'],['explain','Explainable AI'],['recommend','Recommendation']];
+  return `
+    <div class="panel-head">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div class="eyebrow">${field.name.toUpperCase()}</div>
+          <div style="font-family:'Space Grotesk';font-size:20px;font-weight:700;">Zone ${z.label}</div>
+        </div>
+        <button class="iconbtn" onclick="closePanel()" aria-label="Close">${ic('x')}</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+        <span class="badge ${statusBadgeClass(z.status)}">${STATUS_LABEL[z.status]}</span>
+        ${confidenceBadge(z.confidence)}
+      </div>
+    </div>
+    <div class="panel-tabs">
+      ${tabs.map(([k,l])=>`<div class="ptab ${STATE.panelTab===k?'active':''}" onclick="STATE.panelTab='${k}';render();">${l}</div>`).join('')}
+    </div>
+    <div class="panel-body">
+      ${STATE.panelTab==='overview'?panelOverview(z, field):''}
+      ${STATE.panelTab==='explain'?panelExplain(z):''}
+      ${STATE.panelTab==='recommend'?panelRecommend(z, field):''}
+    </div>
+  `;
+}
+function panelOverview(z, field){
+  return `
+    <div class="mrow"><span>Crop</span><span class="mv">${z.crop}</span></div>
+    <div class="mrow"><span>Soil moisture</span><span class="mv">${z.soilMoisture}%</span></div>
+    <div class="mrow"><span>Temperature</span><span class="mv">${z.temperature}°C</span></div>
+    <div class="mrow"><span>Humidity</span><span class="mv">${z.humidity}%</span></div>
+    <div class="mrow"><span>Rainfall (24h)</span><span class="mv">${z.rainfall} mm</span></div>
+    <div class="mrow"><span>NDVI</span><span class="mv">${z.ndvi}</span></div>
+    <div class="mrow"><span>Disease risk</span><span class="mv" style="color:var(--${riskBadgeClass(z.diseaseRisk)==='red'?'red':riskBadgeClass(z.diseaseRisk)==='amber'?'amber':'emerald-dk'})">${z.diseaseRisk}%</span></div>
+    <div class="mrow"><span>Drought risk</span><span class="mv">${z.droughtRisk}%</span></div>
+    <div class="mrow"><span>Flood risk</span><span class="mv">${z.floodRisk}%</span></div>
+    <div class="mrow"><span>Yield estimate</span><span class="mv">${z.yieldEstimate} t/ha</span></div>
+    <div class="mrow"><span>Confidence</span><span class="mv">${z.confidence}%</span></div>
+    <hr class="rule">
+    <button class="btn btn-outline" style="width:100%;margin-bottom:8px;" onclick="STATE.panelTab='explain';render();">${ic('brain')} Why is this zone at this level?</button>
+    <button class="btn btn-primary" style="width:100%;" onclick="sendAlert('${z.id}')">${ic('send')} Send Farmer Alert</button>
+  `;
+}
+function panelExplain(z){
+  return `
+    <div class="section-sub" style="margin-bottom:12px;">The AI engine weighs multiple fused signals to generate this zone's risk scores. Largest contributors shown first.</div>
+    ${z.reasons.map(r=>`
+      <div class="reason-row">
+        <div style="flex:1;">
+          <div style="font-size:12.8px;">${r.t}</div>
+          <div class="reason-bar-track"><div class="reason-bar-fill" style="width:${r.w}%"></div></div>
+        </div>
+        <div style="font-family:'Space Grotesk';font-weight:700;font-size:13px;width:34px;text-align:right;">${r.w}%</div>
+      </div>
+    `).join('')}
+    <hr class="rule">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      ${dataQualityBadge()} ${confidenceBadge(z.confidence)}
+    </div>
+    <p style="color:var(--muted);font-size:11.8px;margin-top:10px;">Explanation generated by the hyper-local AI engine from fused optical, SAR, weather, IoT and soil inputs. Demo data — for illustration only.</p>
+  `;
+}
+function panelRecommend(z, field){
+  const r = z.recommendation;
+  return `
+    <div class="badge ${r.priority==='critical'?'red':r.priority==='moderate'?'amber':'green'}" style="margin-bottom:10px;">${r.priority.toUpperCase()} PRIORITY</div>
+    <div style="font-family:'Space Grotesk';font-weight:700;font-size:15px;margin-bottom:6px;">${r.title}</div>
+    <p style="color:var(--muted);font-size:12.8px;margin:0 0 12px;">${r.body}</p>
+    <div class="eyebrow" style="margin-bottom:8px;">RECOMMENDED ACTIONS</div>
+    ${r.actions.map(a=>`<div style="display:flex;gap:9px;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--border-2);font-size:12.8px;"><span style="color:var(--emerald);margin-top:1px;">${ic('check')}</span>${a}</div>`).join('')}
+    <p style="color:var(--faint);font-size:11.3px;margin-top:12px;">AI recommendations support farmer judgment and do not replace it. Field inspection is advised before applying treatment.</p>
+    <button class="btn btn-primary" style="width:100%;margin-top:10px;" onclick="sendAlert('${z.id}')">${ic('send')} Send Farmer Alert</button>
+  `;
+}
+function sendAlert(zoneId){
+  const farm = getFarm(STATE.farmId);
+  let field, z;
+  for (const f of farm.fields){ const found = getZone(f, zoneId); if(found){ z=found; field=f; break; } }
+  if (!z) return;
+  const msg = `Alert (${field.name}): ${z.recommendation.title.replace(/^\w+ zone \w+ /i,'')} — ${z.status==='critical'?'high risk detected':'monitor recommended'} in Zone ${z.label}. Reply HELP for details.`;
+  const alert = {id:'al-'+Date.now(), ts:'Just now', field:`${farm.name} · ${field.name}`, zone:z.label, message:msg, channel:'App + SMS', status:'Sent'};
+  STATE.alerts.unshift(alert);
+  toast('Farmer alert sent', `${field.name} · Zone ${z.label} — delivered via App + SMS.`);
+  render();
+}
+
+/* ============================= WEATHER ============================= */
+function viewWeather(farm){
+  return `
+  <div class="grid" style="gap:16px;">
+    <div class="grid" style="grid-template-columns:repeat(6,1fr);">
+      ${kpiCard('weather','blue','Temperature', farm.weather.temp+'°C')}
+      ${kpiCard('drop','blue','Humidity', farm.weather.humidity+'%')}
+      ${kpiCard('wind','navy','Wind', farm.weather.wind+' km/h')}
+      ${kpiCard('cloud','blue','Rainfall', farm.weather.rainfall+' mm')}
+      ${kpiCard('cloud','navy','Cloud Cover', farm.weather.cloud+'%')}
+      ${kpiCard('gauge','navy','Pressure', farm.weather.pressure+' hPa')}
+    </div>
+    <div class="card card-pad">
+      <div class="section-title">24-Hour Forecast</div>
+      <div class="section-sub">Hyper-local, downscaled from regional weather API + IoT calibration</div>
+      <div class="chart-wrap"><canvas id="chart-hourly"></canvas></div>
+    </div>
+    <div class="card card-pad">
+      <div class="section-title">7-Day Forecast</div>
+      <div class="chart-wrap"><canvas id="chart-7day"></canvas></div>
+    </div>
+    <div class="card card-pad" style="background:var(--blue-bg);border-color:transparent;">
+      <div style="display:flex;gap:12px;align-items:flex-start;">
+        <div style="color:var(--blue);margin-top:2px;">${ic('alert')}</div>
+        <div>
+          <div style="font-weight:700;font-size:13.5px;color:var(--blue);">Heavy rainfall expected in the next 24 hours</div>
+          <div style="font-size:12.5px;color:var(--text);margin-top:3px;">Fertilizer application is recommended to be postponed for fields with elevated flood risk until conditions clear. See Recommendations for zone-level guidance.</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+function mountWeather(farm){
+  const seed = STATE.farmId+'weather';
+  const hourlyTemp = series(seed+'t',8,farm.weather.temp,6);
+  const hourlyRain = series(seed+'r',8,farm.weather.rainfall,6).map(v=>Math.max(0,v));
+  charts.hourly = new Chart(document.getElementById('chart-hourly'),{
+    type:'bar',
+    data:{labels:TIME_LABELS_24H, datasets:[
+      {type:'line',label:'Temp (°C)', data:hourlyTemp, borderColor:'#C67C06', backgroundColor:'#C67C06', tension:.35, pointRadius:2, yAxisID:'y', borderWidth:2},
+      {type:'bar',label:'Rainfall (mm)', data:hourlyRain, backgroundColor:'rgba(37,99,168,.55)', yAxisID:'y1', borderRadius:4},
+    ]},
+    options:{...baseChartOpts(), plugins:{legend:{display:true,labels:{boxWidth:10,font:{size:11}}}},
+      scales:{ x:{grid:{display:false},ticks:{color:'#8A93A3',font:{size:10.5}}},
+        y:{position:'left',grid:{color:'rgba(138,147,163,.12)'},ticks:{color:'#8A93A3',font:{size:10.5}}},
+        y1:{position:'right',grid:{display:false},ticks:{color:'#8A93A3',font:{size:10.5}}} }}
+  });
+  const days = series(seed+'d',7,farm.weather.temp,5);
+  const daysLow = days.map(d=>round1(d-4-Math.random()*0)); // deterministic offset
+  charts.day7 = new Chart(document.getElementById('chart-7day'),{
+    type:'line',
+    data:{labels:DAY_LABELS_7, datasets:[
+      {label:'High °C', data:days, borderColor:'#D6362C', backgroundColor:'rgba(214,54,44,.08)', tension:.35, pointRadius:3, borderWidth:2},
+      {label:'Low °C', data:days.map(d=>round1(d-6)), borderColor:'#2563A8', backgroundColor:'rgba(37,99,168,.08)', tension:.35, pointRadius:3, borderWidth:2},
+    ]},
+    options:{...baseChartOpts(), plugins:{legend:{display:true,labels:{boxWidth:10,font:{size:11}}}}}
+  });
+}
+
+/* ============================= SOIL ============================= */
+function viewSoil(farm){
+  const field = getField(farm, STATE.fieldId);
+  const avgM = Math.round(field.zones.reduce((s,z)=>s+z.soilMoisture,0)/field.zones.length);
+  return `
+  <div class="grid" style="gap:16px;">
+    <div class="grid" style="grid-template-columns:repeat(4,1fr);">
+      ${kpiCard('soil','blue','Avg. Soil Moisture', avgM+'%', avgM>=35?'Healthy':avgM>=20?'Moderate':'Low', avgM)}
+      ${kpiCard('drop','navy','Field Capacity', Math.min(100,avgM+22)+'%')}
+      ${kpiCard('gauge','amber','Wilting Point Gap', Math.max(0,avgM-14)+'%')}
+      ${kpiCard('leaf','emerald','Texture Class', 'Clay Loam')}
+    </div>
+    <div class="two-col">
+      <div class="card card-pad"><div class="section-title">Soil Moisture — 30 Day Trend</div><div class="chart-wrap"><canvas id="chart-soil-trend"></canvas></div></div>
+      <div class="card card-pad">
+        <div class="section-title">Zone Soil Moisture</div>
+        <div class="section-sub">${field.name}</div>
+        ${field.zones.map(z=>`
+          <div style="margin-bottom:10px;">
+            <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px;"><span>Zone ${z.label}</span><b>${z.soilMoisture}%</b></div>
+            <div class="kpi-bar"><div style="width:${z.soilMoisture}%;background:${z.soilMoisture>=35?'var(--emerald)':z.soilMoisture>=20?'var(--amber)':'var(--red)'}"></div></div>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div class="card card-pad">
+      <div class="section-title">Soil Composition (Demo)</div>
+      <table class="dtab"><thead><tr><th>Property</th><th>Value</th><th>Optimal range</th></tr></thead>
+      <tbody>
+        <tr><td>Organic matter</td><td>3.1%</td><td>2.5 – 4.0%</td></tr>
+        <tr><td>pH</td><td>6.4</td><td>6.0 – 7.0</td></tr>
+        <tr><td>Nitrogen (N)</td><td>Medium</td><td>Medium – High</td></tr>
+        <tr><td>Phosphorus (P)</td><td>Low</td><td>Medium</td></tr>
+        <tr><td>Potassium (K)</td><td>High</td><td>Medium – High</td></tr>
+      </tbody></table>
+    </div>
+  </div>`;
+}
+function mountSoil(farm){
+  const seed = STATE.farmId+STATE.fieldId+'soil';
+  const labels = Array.from({length:30},(_,i)=>'D'+(i+1));
+  const data = series(seed,30,38,20).map(v=>Math.max(8,Math.min(75,v)));
+  charts.soilTrend = new Chart(document.getElementById('chart-soil-trend'),{type:'line',data:{labels,datasets:[{data,borderColor:'#2563A8',backgroundColor:'rgba(37,99,168,.1)',fill:true,tension:.35,pointRadius:0,borderWidth:2}]},options:baseChartOpts({min:0,max:100})});
+}
+
+/* ============================= CROP HEALTH ============================= */
+function viewCrop(farm){
+  const field = getField(farm, STATE.fieldId);
+  const avgNdvi = round2(field.zones.reduce((s,z)=>s+z.ndvi,0)/field.zones.length);
+  return `
+  <div class="grid" style="gap:16px;">
+    <div class="grid" style="grid-template-columns:repeat(4,1fr);">
+      ${kpiCard('leaf','emerald','Avg. NDVI', avgNdvi, avgNdvi>=0.7?'Healthy':avgNdvi>=0.5?'Moderate':'Stressed', Math.round(avgNdvi*100))}
+      ${kpiCard('gauge','emerald','Avg. EVI', round2(avgNdvi*0.86))}
+      ${kpiCard('field','navy','Growth Stage', field.stage)}
+      ${kpiCard('sat','blue','Last Scan', '6h ago')}
+    </div>
+    <div class="field-stage">${zoneGridHtml(field,'cropHealth')}</div>
+    ${legendHtml()}
+    <div class="card card-pad">
+      <div class="section-title">NDVI by Zone</div>
+      <table class="dtab"><thead><tr><th>Zone</th><th>NDVI</th><th>EVI</th><th>Status</th><th>vs. Field Avg</th></tr></thead>
+      <tbody>
+        ${field.zones.map(z=>`<tr onclick="openZone('${z.id}')" style="cursor:pointer">
+          <td><b>Zone ${z.label}</b></td><td>${z.ndvi}</td><td>${round2(z.ndvi*0.86)}</td>
+          <td><span class="badge ${z.ndvi>=0.7?'green':z.ndvi>=0.5?'amber':'red'}">${z.ndvi>=0.7?'Healthy':z.ndvi>=0.5?'Moderate':'Stressed'}</span></td>
+          <td style="color:${z.ndvi>=avgNdvi?'var(--emerald-dk)':'var(--red)'}">${z.ndvi>=avgNdvi?'+':''}${round2(z.ndvi-avgNdvi)}</td>
+        </tr>`).join('')}
+      </tbody></table>
+    </div>
+  </div>`;
+}
+function mountCrop(farm){}
+
+/* ============================= DISEASE RISK ============================= */
+function viewDisease(farm){
+  const field = getField(farm, STATE.fieldId);
+  const critical = field.zones.filter(z=>z.diseaseRisk>=60);
+  return `
+  <div class="grid" style="gap:16px;">
+    <div class="grid" style="grid-template-columns:repeat(3,1fr);">
+      ${kpiCard('bug','red','Zones at Critical Risk', critical.length, 'of '+field.zones.length+' zones')}
+      ${kpiCard('bug','amber','Max Disease Risk', Math.max(...field.zones.map(z=>z.diseaseRisk))+'%')}
+      ${kpiCard('gauge','navy','Avg. Confidence', Math.round(field.zones.reduce((s,z)=>s+z.confidence,0)/field.zones.length)+'%')}
+    </div>
+    <div class="field-stage">${zoneGridHtml(field,'diseaseRisk')}</div>
+    ${legendHtml()}
+    <div class="two-col">
+      <div class="card card-pad"><div class="section-title">Disease Risk — 30 Day Trend</div><div class="chart-wrap"><canvas id="chart-disease-trend"></canvas></div></div>
+      <div class="card card-pad">
+        <div class="section-title">Likely Drivers</div>
+        <div class="section-sub">Aggregated across zones with elevated risk</div>
+        ${critical.length? panelExplain(critical.sort((a,b)=>b.diseaseRisk-a.diseaseRisk)[0]) : '<div style="color:var(--muted);font-size:13px;">No zones currently at critical disease risk.</div>'}
+      </div>
+    </div>
+  </div>`;
+}
+function mountDisease(farm){
+  const seed = STATE.farmId+STATE.fieldId+'disease';
+  const labels = Array.from({length:30},(_,i)=>'D'+(i+1));
+  const data = series(seed,30,40,45).map(v=>Math.max(2,Math.min(95,v)));
+  charts.diseaseTrend = new Chart(document.getElementById('chart-disease-trend'),{type:'line',data:{labels,datasets:[{data,borderColor:'#D6362C',backgroundColor:'rgba(214,54,44,.1)',fill:true,tension:.35,pointRadius:0,borderWidth:2}]},options:baseChartOpts({min:0,max:100})});
+}
+
+/* ============================= DROUGHT & FLOOD ============================= */
+function viewDroughtFlood(farm){
+  const field = getField(farm, STATE.fieldId);
+  return `
+  <div class="grid" style="gap:16px;">
+    <div class="grid" style="grid-template-columns:repeat(4,1fr);">
+      ${kpiCard('drop','amber','Max Drought Risk', Math.max(...field.zones.map(z=>z.droughtRisk))+'%')}
+      ${kpiCard('drop','blue','Max Flood Risk', Math.max(...field.zones.map(z=>z.floodRisk))+'%')}
+      ${kpiCard('cloud','blue','14-Day Rainfall', Math.round(field.zones.reduce((s,z)=>s+z.rainfall,0)/field.zones.length*4)+' mm')}
+      ${kpiCard('gauge','navy','Zones Monitored', field.zones.length)}
+    </div>
+    <div class="two-col">
+      <div class="card card-pad">
+        <div class="section-title">Drought Risk by Zone</div>
+        <div class="field-stage" style="min-height:280px;">${zoneGridHtml(field,'droughtRisk')}</div>
+      </div>
+      <div class="card card-pad">
+        <div class="section-title">Flood Risk by Zone</div>
+        <div class="field-stage" style="min-height:280px;">${zoneGridHtml(field,'floodRisk')}</div>
+      </div>
+    </div>
+    ${legendHtml()}
+    <div class="card card-pad">
+      <table class="dtab"><thead><tr><th>Zone</th><th>Drought Risk</th><th>Flood Risk</th><th>Soil Moisture</th><th>Rainfall</th></tr></thead>
+      <tbody>${field.zones.map(z=>`<tr onclick="openZone('${z.id}')" style="cursor:pointer">
+        <td><b>Zone ${z.label}</b></td>
+        <td><span class="badge ${riskBadgeClass(z.droughtRisk)}">${z.droughtRisk}%</span></td>
+        <td><span class="badge ${riskBadgeClass(z.floodRisk)}">${z.floodRisk}%</span></td>
+        <td>${z.soilMoisture}%</td><td>${z.rainfall} mm</td>
+      </tr>`).join('')}</tbody></table>
+    </div>
+  </div>`;
+}
+function mountDroughtFlood(farm){}
+
+/* ============================= YIELD ============================= */
+function viewYield(farm){
+  const field = getField(farm, STATE.fieldId);
+  const avgYield = round1(field.zones.reduce((s,z)=>s+z.yieldEstimate,0)/field.zones.length);
+  return `
+  <div class="grid" style="gap:16px;">
+    <div class="grid" style="grid-template-columns:repeat(3,1fr);">
+      ${kpiCard('yield','emerald','Field Yield Forecast', avgYield+' t/ha', field.crop)}
+      ${kpiCard('yield','navy','Best Zone', 'Zone '+field.zones.slice().sort((a,b)=>b.yieldEstimate-a.yieldEstimate)[0].label, field.zones.slice().sort((a,b)=>b.yieldEstimate-a.yieldEstimate)[0].yieldEstimate+' t/ha')}
+      ${kpiCard('yield','amber','At-Risk Zone', 'Zone '+field.zones.slice().sort((a,b)=>a.yieldEstimate-b.yieldEstimate)[0].label, field.zones.slice().sort((a,b)=>a.yieldEstimate-b.yieldEstimate)[0].yieldEstimate+' t/ha')}
+    </div>
+    <div class="card card-pad">
+      <div class="section-title">Yield Estimate by Zone</div>
+      <div class="chart-wrap"><canvas id="chart-yield-zone"></canvas></div>
+    </div>
+    <div class="card card-pad">
+      <div class="section-title">Season Yield Projection</div>
+      <div class="section-sub">Modeled vs. historical average for ${field.crop}</div>
+      <div class="chart-wrap"><canvas id="chart-yield-season"></canvas></div>
+    </div>
+  </div>`;
+}
+function mountYield(farm){
+  const field = getField(farm, STATE.fieldId);
+  charts.yieldZone = new Chart(document.getElementById('chart-yield-zone'),{
+    type:'bar',
+    data:{labels:field.zones.map(z=>'Zone '+z.label), datasets:[{data:field.zones.map(z=>z.yieldEstimate), backgroundColor:field.zones.map(z=>z.status==='critical'?'#D6362C':z.status==='moderate'?'#C67C06':'#0E9F6B'), borderRadius:6}]},
+    options:{...baseChartOpts(), plugins:{legend:{display:false}}}
+  });
+  const seed = STATE.farmId+STATE.fieldId+'yieldseason';
+  const modeled = series(seed+'m',6,4.5,1.2);
+  const historical = series(seed+'h',6,4.0,0.4);
+  charts.yieldSeason = new Chart(document.getElementById('chart-yield-season'),{
+    type:'line',
+    data:{labels:['Week 1','Week 3','Week 5','Week 7','Week 9','Week 11'], datasets:[
+      {label:'Modeled', data:modeled, borderColor:'#0E9F6B', backgroundColor:'rgba(14,159,107,.08)', tension:.35, borderWidth:2},
+      {label:'Historical Avg', data:historical, borderColor:'#8A93A3', borderDash:[5,4], tension:.35, borderWidth:2, pointRadius:0},
+    ]},
+    options:{...baseChartOpts(), plugins:{legend:{display:true,labels:{boxWidth:10,font:{size:11}}}}}
+  });
+}
+
+/* ============================= EXPLAINABLE AI ============================= */
+function viewExplainable(farm){
+  const field = getField(farm, STATE.fieldId);
+  const topZone = field.zones.slice().sort((a,b)=>Math.max(b.diseaseRisk,b.droughtRisk,b.floodRisk)-Math.max(a.diseaseRisk,a.droughtRisk,a.floodRisk))[0];
+  return `
+  <div class="grid" style="gap:16px;">
+    <div class="card card-pad">
+      <div class="section-title">Why did the AI generate this prediction?</div>
+      <div class="section-sub">Every risk score is backed by a transparent, weighted breakdown of the fused inputs behind it — never a black box.</div>
+      ${pipelineHtml('explain')}
+    </div>
+    <div class="two-col">
+      <div class="card card-pad">
+        <div class="section-title">Featured: Zone ${topZone.label}, ${field.name}</div>
+        <div class="section-sub">Highest combined risk signal in the selected field right now.</div>
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <span class="badge ${statusBadgeClass(topZone.status)}">${STATUS_LABEL[topZone.status]}</span>
+          ${confidenceBadge(topZone.confidence)}
+        </div>
+        ${panelExplain(topZone)}
+      </div>
+      <div class="card card-pad">
+        <div class="section-title">Model Inputs Used</div>
+        <div class="section-sub">Multimodal fusion for this prediction</div>
+        ${[['sat','Sentinel-2 Optical Imagery','10m resolution, 5-day revisit'],['radar','Sentinel-1 SAR Radar','Cloud-penetrating, 12-day revisit'],['weather','Weather API','Hourly downscaled forecast'],['soil','Soil Sensor Network','IoT, 15-min interval'],['leaf','Historical Farm Records','3-season baseline']].map(([i,t,s])=>`
+          <div style="display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--border-2);">
+            <div style="width:30px;height:30px;border-radius:8px;background:var(--bg);display:flex;align-items:center;justify-content:center;color:var(--navy-3);flex-shrink:0;">${ic(i)}</div>
+            <div><div style="font-weight:600;font-size:12.8px;">${t}</div><div style="color:var(--muted);font-size:11.5px;">${s}</div></div>
+          </div>`).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ============================= RECOMMENDATIONS ============================= */
+function viewRecommendations(farm){
+  const all = [];
+  farm.fields.forEach(f=>f.zones.forEach(z=>all.push({z, f})));
+  all.sort((a,b)=>({critical:0,moderate:1,low:2})[a.z.recommendation.priority]-({critical:0,moderate:1,low:2})[b.z.recommendation.priority]);
+  return `
+  <div class="grid" style="gap:16px;">
+    <div class="card card-pad">
+      <div class="section-title">Actionable Recommendations</div>
+      <div class="section-sub">Generated automatically from zone-level risk predictions across ${farm.name}. AI supports farmer judgment — it does not replace it.</div>
+    </div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));">
+      ${all.map(({z,f})=>`
+        <div class="card card-pad hoverlift">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px;">
+            <span class="badge ${z.recommendation.priority==='critical'?'red':z.recommendation.priority==='moderate'?'amber':'green'}">${z.recommendation.priority.toUpperCase()}</span>
+            ${confidenceBadge(z.confidence)}
+          </div>
+          <div style="font-weight:700;font-size:14px;margin-bottom:4px;">${z.recommendation.title}</div>
+          <div style="color:var(--muted);font-size:11.8px;margin-bottom:8px;">${f.name} · Zone ${z.label}</div>
+          <p style="font-size:12.6px;color:var(--text);margin:0 0 10px;">${z.recommendation.body}</p>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-outline btn-sm" onclick="STATE.fieldId='${f.id}';openZone('${z.id}')">View zone</button>
+            <button class="btn btn-primary btn-sm" onclick="STATE.fieldId='${f.id}';sendAlert('${z.id}')">${ic('send')} Alert</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  </div>`;
+}
+
+/* ============================= ALERTS ============================= */
+function viewAlerts(farm){
+  return `
+  <div class="grid" style="gap:16px;">
+    <div class="card card-pad">
+      <div class="section-title">Farmer Alerts</div>
+      <div class="section-sub">Delivered via in-app notification and SMS for low-connectivity access.</div>
+    </div>
+    ${STATE.alerts.length===0?`<div class="card card-pad" style="text-align:center;color:var(--muted);padding:40px;">No alerts sent yet. Open a critical zone and send a farmer alert to see it here.</div>`:
+    STATE.alerts.map(a=>`
+      <div class="card card-pad" style="display:flex;gap:14px;align-items:flex-start;">
+        <div style="width:36px;height:36px;border-radius:9px;background:var(--red-bg);color:var(--red);display:flex;align-items:center;justify-content:center;flex-shrink:0;">${ic('bell')}</div>
+        <div style="flex:1;">
+          <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+            <div style="font-weight:700;font-size:13px;">${a.field} — Zone ${a.zone}</div>
+            <div style="color:var(--faint);font-size:11.5px;">${a.ts}</div>
+          </div>
+          <div style="font-size:12.8px;color:var(--text);margin:5px 0;">${a.message}</div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span class="badge blue">${ic('phone')} ${a.channel}</span>
+            <span class="badge green">${ic('check')} ${a.status}</span>
+          </div>
+        </div>
+      </div>
+    `).join('')}
+    <div class="card card-pad">
+      <div class="section-title">SMS Preview</div>
+      <div class="section-sub">How alerts appear on a low-connectivity farmer device</div>
+      <div style="max-width:300px;background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:14px;font-size:12.5px;">
+        <div style="color:var(--faint);font-size:10.5px;margin-bottom:6px;">SMS · AgriAlert</div>
+        ${STATE.alerts[0]?STATE.alerts[0].message:'Alert (Field 2): High fungal risk in North corner. Inspect within 24 hours. Reply HELP for details.'}
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ============================= DATA SOURCES ============================= */
+function viewDataSources(){
+  const sources = [
+    {i:'sat', t:'Satellite Optical Imagery', d:'Sentinel-2, 10m resolution', status:'Live', ok:true},
+    {i:'radar', t:'Sentinel-1 SAR Radar', d:'Cloud-penetrating radar backscatter', status:'Live', ok:true},
+    {i:'weather', t:'Weather API', d:'Hourly forecast, hyper-local downscaling', status:'Live', ok:true},
+    {i:'chip', t:'IoT Sensor Network', d:'Soil moisture, temperature, humidity probes', status:'Live', ok:true},
+    {i:'soil', t:'Soil Survey Data', d:'Texture, composition, historical baseline', status:'Static', ok:true},
+    {i:'field', t:'Historical Farm Records', d:'3-season yield and treatment history', status:'Static', ok:true},
+  ];
+  return `
+  <div class="grid" style="gap:16px;">
+    <div class="card card-pad">
+      <div class="section-title">Data Sources</div>
+      <div class="section-sub">All inputs feeding the hyper-local AI engine for this demo environment.</div>
+      <span class="demo-tag">${ic('info')} Simulated Data — mock service layer mirrors production API contracts</span>
+    </div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr));">
+      ${sources.map(s=>`
+        <div class="card card-pad">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div style="width:34px;height:34px;border-radius:9px;background:var(--green-bg);color:var(--emerald-dk);display:flex;align-items:center;justify-content:center;">${ic(s.i)}</div>
+            <span class="badge green">${ic('check')} ${s.status}</span>
+          </div>
+          <div style="font-weight:700;font-size:13.5px;margin-top:10px;">${s.t}</div>
+          <div style="color:var(--muted);font-size:12px;margin-top:2px;">${s.d}</div>
+        </div>
+      `).join('')}
+    </div>
+    <div class="card card-pad">
+      <div class="section-title">Fallback Behavior</div>
+      <div class="section-sub">The platform is designed for monsoon and cloud resilience — it never crashes on a missing feed.</div>
+      <div style="display:flex;gap:12px;flex-direction:column;">
+        <div style="display:flex;gap:10px;padding:10px;background:var(--amber-bg);border-radius:10px;"><span style="color:var(--amber)">${ic('alert')}</span><div style="font-size:12.6px;"><b>Satellite data temporarily unavailable.</b><br><span style="color:var(--muted)">Using latest available observation / SAR fallback.</span></div></div>
+        <div style="display:flex;gap:10px;padding:10px;background:var(--amber-bg);border-radius:10px;"><span style="color:var(--amber)">${ic('alert')}</span><div style="font-size:12.6px;"><b>Latest weather observation unavailable.</b><br><span style="color:var(--muted)">Showing last successful update.</span></div></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ============================= MODEL / SYSTEM TRANSPARENCY ============================= */
+function viewModel(){
+  const models = [
+    {name:'Crop Health Classifier', type:'Random Forest + NDVI/EVI features', acc:'91.2%'},
+    {name:'Disease Risk Model', type:'Gradient Boosted Trees', acc:'87.4%'},
+    {name:'Drought Risk Model', type:'LSTM on soil + rainfall time-series', acc:'85.9%'},
+    {name:'Flood Risk Model', type:'SAR-based hydrological model', acc:'88.1%'},
+    {name:'Yield Prediction', type:'PyTorch regression ensemble', acc:'MAE 0.34 t/ha'},
+  ];
+  return `
+  <div class="grid" style="gap:16px;">
+    <div class="card card-pad">
+      <div class="section-title">System Transparency</div>
+      <div class="section-sub">How raw signal becomes a farmer-facing recommendation.</div>
+      ${pipelineHtml('model')}
+    </div>
+    <div class="card card-pad">
+      <div class="section-title">Model Cards</div>
+      <table class="dtab"><thead><tr><th>Model</th><th>Approach</th><th>Reported Accuracy</th></tr></thead>
+        <tbody>${models.map(m=>`<tr><td><b>${m.name}</b></td><td>${m.type}</td><td>${m.acc}</td></tr>`).join('')}</tbody>
+      </table>
+      <p style="color:var(--faint);font-size:11.3px;margin-top:10px;">Metrics shown are illustrative for demo purposes and reflect the last offline validation run, not live production monitoring.</p>
+    </div>
+    <div class="two-col">
+      <div class="card card-pad">
+        <div class="section-title">Roadmap</div>
+        <div style="display:flex;flex-direction:column;gap:14px;margin-top:6px;">
+          ${[['Months 1–3','Pipeline Integration','Weather API + Sentinel optical/SAR feeds'],['Months 4–5','Index Computation','NDVI/EVI + baseline health monitoring'],['Month 6','Early Field Pilot','Dashboard testing with FPO farmers'],['Months 7–9','Predictive AI Engine','Yield, disease risk, IoT integration'],['Months 10–12','Advisory Rollout','Farmer advisory + multi-language SMS']].map(([p,t,d],i)=>`
+            <div style="display:flex;gap:12px;">
+              <div style="display:flex;flex-direction:column;align-items:center;">
+                <div style="width:10px;height:10px;border-radius:50%;background:var(--emerald);margin-top:4px;"></div>
+                ${i<4?'<div style="width:2px;flex:1;background:var(--border);margin-top:2px;"></div>':''}
+              </div>
+              <div style="padding-bottom:6px;"><div style="font-size:11px;color:var(--faint);font-weight:700;">${p}</div><div style="font-weight:700;font-size:13px;">${t}</div><div style="color:var(--muted);font-size:12px;">${d}</div></div>
+            </div>`).join('')}
+        </div>
+      </div>
+      <div class="card card-pad">
+        <div class="section-title">Product Principles</div>
+        ${['Hyper-local intelligence over regional averages','Multimodal data fusion, never single-source','Explainable AI — every score is traceable','Actionable, not just informational','Built for smallholder accessibility','Resilient under low connectivity and monsoon cloud cover','AI supports farmer judgment — it never replaces it','No automated execution of agricultural actions'].map(p=>`
+          <div style="display:flex;gap:9px;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--border-2);font-size:12.6px;"><span style="color:var(--emerald);margin-top:1px;">${ic('check')}</span>${p}</div>
+        `).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ============================= SETTINGS ============================= */
+function viewSettings(farm){
+  return `
+  <div class="grid" style="gap:16px;">
+    <div class="two-col">
+      <div class="card card-pad">
+        <div class="section-title">Farm &amp; Farmer Profile</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px;">
+          <div><label class="setting-lbl">Farm name</label><input value="${farm.name}" style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:13px;"></div>
+          <div><label class="setting-lbl">Primary crop</label><input value="${farm.crop}" style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:13px;"></div>
+          <div><label class="setting-lbl">Location</label><input value="${farm.location}" style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:13px;"></div>
+          <div><label class="setting-lbl">Language</label>
+            <div class="select-wrap"><select class="pill-select" style="width:100%;"><option>English</option><option>Malayalam</option><option>Hindi</option><option>Tamil</option></select></div>
+          </div>
+        </div>
+      </div>
+      <div class="card card-pad">
+        <div class="section-title">Notification Preferences</div>
+        ${[['App notifications',true],['SMS alerts',true],['Weekly summary email',false],['Critical risk only (mute low priority)',false]].map(([l,on],i)=>`
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border-2);font-size:13px;">
+            <span>${l}</span>
+            <div class="toggle ${on?'on':''}" onclick="this.classList.toggle('on')"><div class="knob"></div></div>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div class="card card-pad">
+      <div class="section-title">Alert Thresholds</div>
+      <div class="section-sub">Zones crossing these levels will trigger a farmer alert.</div>
+      <div class="grid" style="grid-template-columns:repeat(4,1fr);margin-top:6px;">
+        ${[['Disease risk',60,'%'],['Soil moisture (low)',20,'%'],['Rainfall',40,'mm'],['Temperature',33,'°C']].map(([l,v,u])=>`
+          <div>
+            <label class="setting-lbl">${l}</label>
+            <input type="range" min="0" max="100" value="${v}" oninput="this.nextElementSibling.textContent=this.value+'${u}'">
+            <div class="mono-num" style="font-weight:700;font-size:13px;margin-top:4px;">${v}${u}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="card card-pad">
+        <div class="section-title">Units &amp; Data</div>
+        ${[['Temperature unit','Celsius (°C)'],['Area unit','Hectares (ha)'],['Data sources','6 connected'],['Privacy','Farm data not shared with third parties']].map(([l,v])=>`<div class="mrow"><span>${l}</span><span class="mv" style="font-size:12.8px;">${v}</span></div>`).join('')}
+      </div>
+      <div class="card card-pad">
+        <div class="section-title">Connectivity</div>
+        <div class="mrow"><span>Offline mode</span><div class="toggle ${STATE.offline?'on':''}" onclick="STATE.offline=!STATE.offline;render();"><div class="knob"></div></div></div>
+        <div class="mrow"><span>SMS fallback mode</span><div class="toggle on"><div class="knob"></div></div></div>
+        <p style="color:var(--faint);font-size:11.3px;margin-top:10px;">When connectivity drops, the dashboard shell and latest farm data remain cached, then sync automatically once a connection returns.</p>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ============================= DEMO MODE ============================= */
+function runDemo(){
+  if (STATE.demoRunning) return;
+  STATE.demoRunning = true;
+  STATE.farmId = 'green-valley';
+  STATE.fieldId = 'field-02';
+  STATE.zoneId = null;
+  STATE.panelOpen = false;
+  STATE.activeLayer = 'diseaseRisk';
+  navigate('map');
+  toast('Demo mode started', 'Green Valley Farm · Field 02 — walking through the full pipeline.');
+  setTimeout(()=>{ openZone('field-02-zC'); toast('Zone C flagged', 'Disease risk 72% — above the 60% alert threshold.'); }, 1200);
+  setTimeout(()=>{ STATE.panelTab='explain'; render(); toast('Explaining risk', 'AI reasoning generated from fused humidity, temperature, NDVI and soil signals.'); }, 2600);
+  setTimeout(()=>{ STATE.panelTab='recommend'; render(); toast('Recommendation ready', '"Inspect Zone C within 24 hours."'); }, 4000);
+  setTimeout(()=>{ toast('Weather check', 'Heavy rainfall expected — postponing fertilizer application field-wide.'); }, 5400);
+  setTimeout(()=>{ sendAlert('field-02-zC'); }, 6600);
+  setTimeout(()=>{ navigate('alerts'); toast('Demo complete', 'Risk detected → explained → recommended → alert sent.'); STATE.demoRunning=false; }, 7600);
+}
+
+/* ============================= INIT ============================= */
+render();
+</script>
+</body>
+</html>
