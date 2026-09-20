@@ -282,6 +282,46 @@ input[type=range]{width:100%; accent-color:var(--emerald);}
 .chip-btn{padding:7px 13px;border-radius:999px;border:1px solid var(--border);background:var(--surface);font-size:12.5px;font-weight:600;color:var(--muted);}
 .chip-btn.active{background:var(--navy);color:#fff;border-color:var(--navy);}
 label.setting-lbl{font-size:12.5px;font-weight:600;color:var(--muted);display:block;margin-bottom:6px;}
+
+/* ============================= ENHANCEMENT LAYER ============================= */
+.quick-actions{display:flex;align-items:center;gap:7px;margin-left:4px}
+.quick-action-btn{height:36px;padding:0 10px;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--muted);display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700}
+.quick-action-btn:hover{background:var(--bg);color:var(--text)}
+.command-overlay{position:fixed;inset:0;background:rgba(4,12,25,.48);z-index:100;display:none;align-items:flex-start;justify-content:center;padding:9vh 16px}
+.command-overlay.open{display:flex}
+.command-box{width:min(680px,100%);background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:0 24px 80px rgba(0,0,0,.28);overflow:hidden}
+.command-input{width:100%;border:0;border-bottom:1px solid var(--border);outline:none;background:transparent;color:var(--text);font-size:16px;padding:17px 18px}
+.command-list{max-height:55vh;overflow:auto;padding:8px}
+.command-item{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:9px;cursor:pointer}
+.command-item:hover,.command-item.active{background:var(--bg)}
+.command-item small{display:block;color:var(--muted);margin-top:2px}
+.enhance-fab{position:fixed;right:20px;bottom:20px;z-index:34;display:flex;gap:7px}
+.enhance-fab button{width:42px;height:42px;border-radius:50%;border:1px solid var(--border);background:var(--surface);color:var(--text);box-shadow:0 8px 24px rgba(0,0,0,.13)}
+.activity-drawer{position:fixed;right:0;top:0;bottom:0;width:min(430px,94vw);background:var(--surface);z-index:96;border-left:1px solid var(--border);transform:translateX(100%);transition:transform .22s ease;display:flex;flex-direction:column}
+.activity-drawer.open{transform:translateX(0)}
+.activity-head{padding:18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.activity-body{overflow:auto;padding:14px 18px;flex:1}
+.activity-item{padding:11px 0;border-bottom:1px solid var(--border-2)}
+.activity-item b{font-size:12.5px}.activity-item span{display:block;color:var(--muted);font-size:11.5px;margin-top:3px}
+.compare-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.compare-check{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:8px;border:1px solid var(--border);border-radius:8px}
+.compare-check input{accent-color:var(--emerald)}
+@media(max-width:880px){
+  .quick-action-btn .qa-label{display:none}
+  .quick-action-btn{width:36px;padding:0;justify-content:center}
+  .enhance-fab{bottom:70px;right:12px}
+}
+@media(max-width:560px){
+  .enhance-fab{display:none}
+}
+
+@media print{
+  #sidebar,#topbar,.tabbar,.enhance-fab,.panel-overlay,#zonepanel,#toasts,.quick-actions{display:none!important}
+  #main-col{margin-left:0!important}
+  #view{max-width:none!important;padding:0!important}
+  .card{box-shadow:none!important;break-inside:avoid}
+  body{background:#fff!important;color:#111!important}
+}
 </style>
 </head>
 <body>
@@ -593,6 +633,10 @@ function render(){
         ${ic('bell')}
         ${STATE.alerts.length?`<span style="position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:9.5px;font-weight:700;border-radius:999px;min-width:15px;height:15px;display:flex;align-items:center;justify-content:center;">${STATE.alerts.length}</span>`:''}
       </button>
+      <div class="quick-actions" aria-label="Quick actions">
+        <button class="quick-action-btn" onclick="openCommandPalette()" title="Quick actions"><span>⌘</span><span class="qa-label">Quick</span></button>
+        <button class="quick-action-btn" onclick="refreshProjectData()" title="Refresh project data">${ic('radar')}<span class="qa-label">Refresh</span></button>
+      </div>
     </div>
   </div>
   ${STATE.offline?`<div class="offline-strip">${ic('wifi_off')} Offline Mode — showing cached data · Last synchronized ${farm.lastUpdated}</div>`:''}
@@ -621,6 +665,7 @@ function render(){
   `;
   renderToasts();
   mountView(farm);
+  mountEnhancements(farm);
 }
 
 function renderNavGroup(group){
@@ -715,7 +760,7 @@ function kpiCard(icon, color, label, value, sub, barPct){
     </div>
     <div class="kpi-val mono-num">${value}</div>
     <div class="kpi-label">${label}</div>
-    ${barPct!==undefined?`<div class="kpi-bar"><div style="width:${barPct}%;background:${fg}"></div></div>`:''}
+    ${barPct!==undefined?`<div class="kpi-bar"><div style="width:${barPct}\%;background:${fg}"></div></div>`:''}
   </div>`;
 }
 
@@ -736,7 +781,7 @@ function zoneGridHtml(field, layerKey){
   return `<div class="zone-grid">
     ${field.zones.map(z=>{
       const lv = layerVal(z);
-      return `<div class="zone-cell ${lv.st} ${STATE.zoneId===z.id?'selected':''}" onclick="openZone('${z.id}')" role="button" tabindex="0" aria-label="Zone ${z.label}, ${STATE.zoneId} status ${STATUS_LABEL[lv.st]}">
+      return `<div class="zone-cell ${lv.st}${STATE.zoneId===z.id?'selected':''}" onclick="openZone('${z.id}')" role="button" tabindex="0" aria-label="Zone ${z.label}, ${STATE.zoneId} status${STATUS_LABEL[lv.st]}">
         <div class="zc-top"><span class="zc-label">${z.label}</span>${lv.st==='critical'?'<span class="zc-pulse"></span>':''}</div>
         <div class="zc-bottom">
           <div class="zc-metric">${lv.v}${lv.unit}</div>
@@ -952,7 +997,7 @@ function viewField(farm){
         ${[['Vegetation',vegetation,'leaf'],['Soil',soil,'soil'],['Weather',weatherScore,'weather'],['Water',water,'drop'],['Disease',disease,'bug']].map(([l,v,i])=>`
           <div style="margin-bottom:11px;">
             <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px;"><span style="display:flex;align-items:center;gap:6px;color:var(--muted)">${ic(i)} ${l}</span><b>${v}</b></div>
-            <div class="kpi-bar"><div style="width:${v}%;background:${v>=70?'var(--emerald)':v>=45?'var(--amber)':'var(--red)'}"></div></div>
+            <div class="kpi-bar"><div style="width:${v}\%;background:${v>=70?'var(--emerald)':v>=45?'var(--amber)':'var(--red)'}"></div></div>
           </div>
         `).join('')}
       </div>
@@ -1205,7 +1250,7 @@ function viewSoil(farm){
         ${field.zones.map(z=>`
           <div style="margin-bottom:10px;">
             <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px;"><span>Zone ${z.label}</span><b>${z.soilMoisture}%</b></div>
-            <div class="kpi-bar"><div style="width:${z.soilMoisture}%;background:${z.soilMoisture>=35?'var(--emerald)':z.soilMoisture>=20?'var(--amber)':'var(--red)'}"></div></div>
+            <div class="kpi-bar"><div style="width:${z.soilMoisture}\%;background:${z.soilMoisture>=35?'var(--emerald)':z.soilMoisture>=20?'var(--amber)':'var(--red)'}"></div></div>
           </div>`).join('')}
       </div>
     </div>
@@ -1316,7 +1361,7 @@ function viewDroughtFlood(farm){
         <td><b>Zone ${z.label}</b></td>
         <td><span class="badge ${riskBadgeClass(z.droughtRisk)}">${z.droughtRisk}%</span></td>
         <td><span class="badge ${riskBadgeClass(z.floodRisk)}">${z.floodRisk}%</span></td>
-        <td>${z.soilMoisture}%</td><td>${z.rainfall} mm</td>
+        <td>${z.soilMoisture}\%</td><td>${z.rainfall} mm</td>
       </tr>`).join('')}</tbody></table>
     </div>
   </div>`;
@@ -1389,7 +1434,7 @@ function viewExplainable(farm){
       <div class="card card-pad">
         <div class="section-title">Model Inputs Used</div>
         <div class="section-sub">Multimodal fusion for this prediction</div>
-        ${[['sat','Sentinel-2 Optical Imagery','10m resolution, 5-day revisit'],['radar','Sentinel-1 SAR Radar','Cloud-penetrating, 12-day revisit'],['weather','Weather API','Hourly downscaled forecast'],['soil','Soil Sensor Network','IoT, 15-min interval'],['leaf','Historical Farm Records','3-season baseline']].map(([i,t,s])=>`
+        ${[['sat','Sentinel-2 Optical Imagery','10m resolution, 5-day revisit'],['radar','Sentinel-1 SAR Radar','Cloud-penetrating radar backscatter', '12-day revisit'],['weather','Weather API','Hourly downscaled forecast'],['soil','Soil Sensor Network','IoT, 15-min interval'],['leaf','Historical Farm Records','3-season baseline']].map(([i,t,s])=>`
           <div style="display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--border-2);">
             <div style="width:30px;height:30px;border-radius:8px;background:var(--bg);display:flex;align-items:center;justify-content:center;color:var(--navy-3);flex-shrink:0;">${ic(i)}</div>
             <div><div style="font-weight:600;font-size:12.8px;">${t}</div><div style="color:var(--muted);font-size:11.5px;">${s}</div></div>
@@ -1414,8 +1459,7 @@ function viewRecommendations(farm){
       ${all.map(({z,f})=>`
         <div class="card card-pad hoverlift">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px;">
-            <span class="badge ${z.recommendation.priority==='critical'?'red':z.recommendation.priority==='moderate'?'amber':'green'}">${z.recommendation.priority.toUpperCase()}</span>
-            ${confidenceBadge(z.confidence)}
+            <span class="badge ${z.recommendation.priority==='critical'?'red':z.recommendation.priority==='moderate'?'amber':'green'}">${z.recommendation.priority.toUpperCase()}</span>${confidenceBadge(z.confidence)}
           </div>
           <div style="font-weight:700;font-size:14px;margin-bottom:4px;">${z.recommendation.title}</div>
           <div style="color:var(--muted);font-size:11.8px;margin-bottom:8px;">${f.name} · Zone ${z.label}</div>
@@ -1444,13 +1488,13 @@ function viewAlerts(farm){
         <div style="width:36px;height:36px;border-radius:9px;background:var(--red-bg);color:var(--red);display:flex;align-items:center;justify-content:center;flex-shrink:0;">${ic('bell')}</div>
         <div style="flex:1;">
           <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
-            <div style="font-weight:700;font-size:13px;">${a.field} — Zone ${a.zone}</div>
+            <div style="font-weight:700;font-size:13px;">${a.field} — Zone${a.zone}</div>
             <div style="color:var(--faint);font-size:11.5px;">${a.ts}</div>
           </div>
           <div style="font-size:12.8px;color:var(--text);margin:5px 0;">${a.message}</div>
           <div style="display:flex;gap:8px;align-items:center;">
-            <span class="badge blue">${ic('phone')} ${a.channel}</span>
-            <span class="badge green">${ic('check')} ${a.status}</span>
+            <span class="badge blue">${ic('phone')}${a.channel}</span>
+            <span class="badge green">${ic('check')}${a.status}</span>
           </div>
         </div>
       </div>
@@ -1488,7 +1532,7 @@ function viewDataSources(){
         <div class="card card-pad">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;">
             <div style="width:34px;height:34px;border-radius:9px;background:var(--green-bg);color:var(--emerald-dk);display:flex;align-items:center;justify-content:center;">${ic(s.i)}</div>
-            <span class="badge green">${ic('check')} ${s.status}</span>
+            <span class="badge green">${ic('check')}${s.status}</span>
           </div>
           <div style="font-weight:700;font-size:13.5px;margin-top:10px;">${s.t}</div>
           <div style="color:var(--muted);font-size:12px;margin-top:2px;">${s.d}</div>
@@ -1604,6 +1648,151 @@ function viewSettings(farm){
     </div>
   </div>`;
 }
+
+
+/* ============================= PROJECT ENHANCEMENTS ============================= */
+const ENHANCE_KEY = 'climate-intelligence-enhancements-v1';
+const ACTIVITY_KEY = 'climate-intelligence-activity-v1';
+
+function readEnhanceStore(){
+  try{return JSON.parse(localStorage.getItem(ENHANCE_KEY)||'{}');}catch(e){return {};}
+}
+function writeEnhanceStore(data){
+  try{localStorage.setItem(ENHANCE_KEY,JSON.stringify(data));}catch(e){}
+}
+function readActivity(){
+  try{return JSON.parse(localStorage.getItem(ACTIVITY_KEY)||'[]');}catch(e){return [];}
+}
+function logActivity(title, detail){
+  const items=readActivity();
+  items.unshift({title,detail,ts:new Date().toLocaleString()});
+  writeActivity(items.slice(0,60));
+}
+function writeActivity(items){
+  try{localStorage.setItem(ACTIVITY_KEY,JSON.stringify(items));}catch(e){}
+}
+function safeCsv(v){
+  return '"'+String(v??'').replace(/"/g,'""')+'"';
+}
+function downloadText(name, content, type='text/plain'){
+  const blob=new Blob([content],{type});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function exportCurrentFarm(){
+  const farm=getFarm(STATE.farmId);
+  const rows=[['Farm','Field','Zone','Crop','Status','NDVI','Soil Moisture %','Temperature °C','Humidity %','Rainfall mm','Disease Risk %','Drought Risk %','Flood Risk %','Yield t/ha','Confidence %']];
+  farm.fields.forEach(f=>f.zones.forEach(z=>rows.push([
+    farm.name,f.name,z.label,z.crop,STATUS_LABEL[z.status],z.ndvi,z.soilMoisture,z.temperature,z.humidity,z.rainfall,
+    z.diseaseRisk,z.droughtRisk,z.floodRisk,z.yieldEstimate,z.confidence
+  ])));
+  downloadText(`${farm.id}-zone-report.csv`,rows.map(r=>r.map(safeCsv).join(',')).join('\n'),'text/csv;charset=utf-8');
+  logActivity('CSV report exported',`${farm.name} zone-level dataset`);
+  toast('Export complete','Zone report downloaded as CSV.');
+}
+function exportSnapshot(){
+  const farm=getFarm(STATE.farmId);
+  const payload={exportedAt:new Date().toISOString(),farm,view:STATE.view,activeLayer:STATE.activeLayer,alerts:STATE.alerts};
+  downloadText(`${farm.id}-snapshot.json`,JSON.stringify(payload,null,2),'application/json');
+  logActivity('Snapshot exported',`${farm.name} dashboard state`);
+  toast('Snapshot exported','JSON backup created locally.');
+}
+function printReport(){
+  logActivity('Report print requested',`${getFarm(STATE.farmId).name} · ${NAV.find(n=>n.id===STATE.view)?.label||STATE.view}`);
+  window.print();
+}
+function refreshProjectData(){
+  const farm=getFarm(STATE.farmId);
+  farm.lastUpdated='just now';
+  writeEnhanceStore({...readEnhanceStore(),lastRefresh:Date.now()});
+  logActivity('Data refresh',`${farm.name} simulated inputs refreshed`);
+  render();
+  toast('Data refreshed','Latest demo values are now displayed.');
+}
+function openActivityDrawer(){
+  let d=document.getElementById('activity-drawer');
+  if(!d){
+    d=document.createElement('div'); d.id='activity-drawer'; d.className='activity-drawer';
+    d.innerHTML=`<div class="activity-head"><div><div class="section-title">Activity Log</div><div class="section-sub" style="margin:2px 0 0">Local audit trail for dashboard actions</div></div><button class="iconbtn" onclick="closeActivityDrawer()">${ic('x')}</button></div><div class="activity-body" id="activity-body"></div>`;
+    document.body.appendChild(d);
+  }
+  const body=d.querySelector('#activity-body');
+  const items=readActivity();
+  body.innerHTML=items.length?items.map(x=>`<div class="activity-item"><b>${x.title}</b><span>${x.detail}</span><span>${x.ts}</span></div>`).join(''):`<div style="color:var(--muted);font-size:13px;padding:20px 0">No activity recorded yet.</div>`;
+  d.classList.add('open');
+}
+function closeActivityDrawer(){document.getElementById('activity-drawer')?.classList.remove('open');}
+function openCommandPalette(){
+  let o=document.getElementById('command-overlay');
+  if(!o){
+    o=document.createElement('div'); o.id='command-overlay'; o.className='command-overlay';
+    o.innerHTML=`<div class="command-box" role="dialog" aria-label="Quick actions">
+      <input id="command-input" class="command-input" placeholder="Search pages or actions…" autocomplete="off">
+      <div id="command-list" class="command-list"></div>
+    </div>`;
+    document.body.appendChild(o);
+    o.addEventListener('click',e=>{if(e.target===o)closeCommandPalette();});
+    o.querySelector('#command-input').addEventListener('input',renderCommandResults);
+    o.querySelector('#command-input').addEventListener('keydown',e=>{
+      if(e.key==='Escape') closeCommandPalette();
+      if(e.key==='Enter'){const first=o.querySelector('.command-item');if(first)first.click();}
+    });
+  }
+  o.classList.add('open'); o.querySelector('#command-input').value=''; renderCommandResults(); o.querySelector('#command-input').focus();
+}
+function closeCommandPalette(){document.getElementById('command-overlay')?.classList.remove('open');}
+function renderCommandResults(){
+  const input=document.getElementById('command-input'); const list=document.getElementById('command-list'); if(!input||!list)return;
+  const q=input.value.toLowerCase().trim();
+  const actions=[
+    ...NAV.map(n=>({label:n.label,sub:'Open page',run:()=>navigate(n.id)})),
+    {label:'Export CSV report',sub:'Download current farm zones',run:exportCurrentFarm},
+    {label:'Export JSON snapshot',sub:'Backup current dashboard state',run:exportSnapshot},
+    {label:'Print report',sub:'Print current dashboard view',run:printReport},
+    {label:'Activity log',sub:'Review recent local actions',run:openActivityDrawer},
+    {label:'Refresh data',sub:'Refresh simulated project inputs',run:refreshProjectData},
+    {label:'Run guided demo',sub:'Walk through detection → explanation → action',run:runDemo}
+  ];
+  const filtered=actions.filter(a=>!q||(`${a.label} ${a.sub}`).toLowerCase().includes(q)).slice(0,12);
+  list.innerHTML=filtered.map((a,i)=>`<div class="command-item" tabindex="0" onclick="(${a.run.toString()})();closeCommandPalette()"><div style="flex:1"><b>${a.label}</b><small>${a.sub}</small></div>${ic('chevron')}</div>`).join('')||`<div style="padding:18px;color:var(--muted)">No matching action.</div>`;
+}
+function addComparePanel(){
+  const farm=getFarm(STATE.farmId);
+  const fields=farm.fields;
+  const selected=fields.flatMap(f=>f.zones.map(z=>({...z,field:f.name}))).filter(z=>z.status==='critical'||z.status==='moderate').slice(0,4);
+  const chosen=selected.length?selected:fields[0].zones.slice(0,2).map(z=>({...z,field:fields[0].name}));
+  const html=`<div class="card card-pad" id="enhance-compare" style="margin-bottom:16px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+      <div><div class="section-title">Zone Comparison</div><div class="section-sub">Compare risk, crop health, moisture and yield side-by-side.</div></div>
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('enhance-compare')?.remove()">Hide</button>
+    </div>
+    <div class="compare-grid">${chosen.map(z=>`<div class="card card-pad">
+      <div style="font-weight:700">Zone ${z.label} · ${z.field}</div>
+      <div class="badge ${statusBadgeClass(z.status)}" style="margin:8px 0">${STATUS_LABEL[z.status]}</div>
+      <div class="mrow"><span>NDVI</span><span class="mv">${z.ndvi}</span></div>
+      <div class="mrow"><span>Soil moisture</span><span class="mv">${z.soilMoisture}%</span></div>
+      <div class="mrow"><span>Disease</span><span class="mv">${z.diseaseRisk}%</span></div>
+      <div class="mrow"><span>Drought</span><span class="mv">${z.droughtRisk}%</span></div>
+      <div class="mrow"><span>Flood</span><span class="mv">${z.floodRisk}%</span></div>
+      <div class="mrow"><span>Yield</span><span class="mv">${z.yieldEstimate} t/ha</span></div>
+    </div>`).join('')}</div>
+  </div>`;
+  const view=document.getElementById('view'); if(view&&!document.getElementById('enhance-compare'))view.insertAdjacentHTML('afterbegin',html);
+}
+function mountEnhancements(farm){
+  const old=document.getElementById('enhance-fab'); if(old)old.remove();
+  const fab=document.createElement('div'); fab.id='enhance-fab'; fab.className='enhance-fab';
+  fab.innerHTML=`<button title="Compare zones" onclick="addComparePanel()">⇄</button>
+    <button title="Activity log" onclick="openActivityDrawer()">☷</button>
+    <button title="Export CSV" onclick="exportCurrentFarm()">↓</button>`;
+  document.body.appendChild(fab);
+  logActivity('Page viewed',`${NAV.find(n=>n.id===STATE.view)?.label||STATE.view} · ${farm.name}`);
+}
+document.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();openCommandPalette();}
+  if(e.key==='Escape'){closeCommandPalette();closeActivityDrawer();}
+});
 
 /* ============================= DEMO MODE ============================= */
 function runDemo(){
